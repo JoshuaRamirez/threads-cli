@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { getAllThreads, getAllGroups, getGroupById } from '../storage';
 import { Thread, ThreadStatus, Temperature, ThreadSize, Importance } from '../models';
-import { formatThreadSummary } from '../utils';
+import { formatThreadSummary, buildTree, renderTree } from '../utils';
 import chalk from 'chalk';
 
 export const listCommand = new Command('list')
@@ -15,6 +15,8 @@ export const listCommand = new Command('list')
   .option('--hot', 'Shortcut for --temperature hot')
   .option('--active', 'Shortcut for --status active')
   .option('--all', 'Show all threads including archived')
+  .option('--flat', 'Display as flat list (non-hierarchical)')
+  .option('--tree', 'Display as hierarchical tree (default)')
   .action((options) => {
     let threads = getAllThreads();
 
@@ -70,8 +72,21 @@ export const listCommand = new Command('list')
     });
 
     console.log(chalk.bold(`\nThreads (${threads.length}):\n`));
-    threads.forEach(t => {
-      console.log(formatThreadSummary(t));
-      console.log('');
-    });
+
+    // Determine display mode: tree is default unless --flat is specified
+    const useFlat = options.flat && !options.tree;
+
+    if (useFlat) {
+      // Flat list view (original behavior)
+      threads.forEach(t => {
+        console.log(formatThreadSummary(t));
+        console.log('');
+      });
+    } else {
+      // Tree view (default)
+      const groups = getAllGroups();
+      const tree = buildTree(threads, groups);
+      const lines = renderTree(tree);
+      lines.forEach(line => console.log(line));
+    }
   });
