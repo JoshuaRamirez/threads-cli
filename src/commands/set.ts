@@ -88,8 +88,27 @@ export const setCommand = new Command('set')
         updates.description = value;
         break;
 
+      case 'parent':
+        if (value.toLowerCase() === 'none' || value === '') {
+          updates.parentId = null;
+          displayValue = 'none';
+        } else {
+          const parentThread = findThread(value);
+          if (!parentThread) {
+            console.log(chalk.red(`Parent thread "${value}" not found`));
+            return;
+          }
+          if (parentThread.id === thread.id) {
+            console.log(chalk.red('Thread cannot be its own parent'));
+            return;
+          }
+          updates.parentId = parentThread.id;
+          displayValue = parentThread.name;
+        }
+        break;
+
       default:
-        console.log(chalk.red(`Unknown property "${property}". Use: status, temperature, size, importance, name, description`));
+        console.log(chalk.red(`Unknown property "${property}". Use: status, temperature, size, importance, name, description, parent`));
         return;
     }
 
