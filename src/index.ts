@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+
+import { Command } from 'commander';
+import { listCommand } from './commands/list';
+import { newCommand } from './commands/new';
+import { showCommand } from './commands/show';
+import { progressCommand } from './commands/progress';
+import { setCommand } from './commands/set';
+import { spawnCommand } from './commands/spawn';
+import { dependCommand } from './commands/depend';
+import { groupCommand } from './commands/group';
+import { archiveCommand } from './commands/archive';
+
+const program = new Command();
+
+program
+  .name('threads')
+  .description('Conversational thread tracker for managing streams of activity')
+  .version('1.0.0');
+
+// Register all commands
+program.addCommand(listCommand);
+program.addCommand(newCommand);
+program.addCommand(showCommand);
+program.addCommand(progressCommand);
+program.addCommand(setCommand);
+program.addCommand(spawnCommand);
+program.addCommand(dependCommand);
+program.addCommand(groupCommand);
+program.addCommand(archiveCommand);
+
+program.parse();
