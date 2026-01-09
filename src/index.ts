@@ -10,6 +10,8 @@ import { spawnCommand } from './commands/spawn';
 import { dependCommand } from './commands/depend';
 import { groupCommand } from './commands/group';
 import { archiveCommand } from './commands/archive';
+import { moveProgressCommand } from './commands/move-progress';
+import { overviewCommand } from './commands/overview';
 
 const program = new Command();
 
@@ -28,5 +30,7 @@ program.addCommand(spawnCommand);
 program.addCommand(dependCommand);
 program.addCommand(groupCommand);
 program.addCommand(archiveCommand);
+program.addCommand(overviewCommand);
+program.addCommand(moveProgressCommand);
 
 program.parse();

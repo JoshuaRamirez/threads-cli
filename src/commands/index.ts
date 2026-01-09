@@ -7,3 +7,5 @@ export { spawnCommand } from './spawn';
 export { dependCommand } from './depend';
 export { groupCommand } from './group';
 export { archiveCommand } from './archive';
+export { overviewCommand } from './overview';
+export { moveProgressCommand } from './move-progress';
