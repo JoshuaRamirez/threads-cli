@@ -14,6 +14,7 @@ import { moveProgressCommand } from './commands/move-progress';
 import { overviewCommand } from './commands/overview';
 import { detailsCommand } from './commands/details';
 import { tagCommand } from './commands/tag';
+import { batchCommand } from './commands/batch';
 
 const program = new Command();
 
@@ -36,5 +37,6 @@ program.addCommand(overviewCommand);
 program.addCommand(moveProgressCommand);
 program.addCommand(detailsCommand);
 program.addCommand(tagCommand);
+program.addCommand(batchCommand);
 
 program.parse();

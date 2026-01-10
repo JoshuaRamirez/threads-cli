@@ -11,3 +11,4 @@ export { overviewCommand } from './overview';
 export { moveProgressCommand } from './move-progress';
 export { detailsCommand } from './details';
 export { tagCommand } from './tag';
+export { batchCommand } from './batch';
