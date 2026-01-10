@@ -12,6 +12,7 @@ export const listCommand = new Command('list')
   .option('-z, --size <size>', 'Filter by size (tiny, small, medium, large, huge)')
   .option('-i, --importance <level>', 'Filter by minimum importance (1-5)', parseInt)
   .option('-g, --group <name>', 'Filter by group name')
+  .option('--tag <tag>', 'Filter by tag')
   .option('--hot', 'Shortcut for --temperature hot')
   .option('--active', 'Shortcut for --status active')
   .option('--all', 'Show all threads including archived')
@@ -53,6 +54,12 @@ export const listCommand = new Command('list')
         console.log(chalk.yellow(`Group "${options.group}" not found`));
         return;
       }
+    }
+    if (options.tag) {
+      const tagLower = options.tag.toLowerCase();
+      threads = threads.filter(t =>
+        t.tags && t.tags.some(tag => tag.toLowerCase() === tagLower)
+      );
     }
 
     if (threads.length === 0) {

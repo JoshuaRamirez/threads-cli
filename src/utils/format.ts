@@ -53,6 +53,12 @@ export function formatImportance(imp: Importance): string {
   return chalk.yellow(filled) + chalk.dim(empty);
 }
 
+// Format tags for display
+export function formatTags(tags: string[]): string {
+  if (!tags || tags.length === 0) return '';
+  return tags.map(t => chalk.cyan(`#${t}`)).join(' ');
+}
+
 export function formatThreadSummary(thread: Thread): string {
   const lines = [
     `${chalk.bold(thread.name)} ${chalk.gray(`[${thread.id.slice(0, 8)}]`)}`,
@@ -78,6 +84,11 @@ export function formatThreadDetail(thread: Thread): string {
     `Created:     ${new Date(thread.createdAt).toLocaleString()}`,
     `Updated:     ${new Date(thread.updatedAt).toLocaleString()}`,
   ];
+
+  // Display tags if present
+  if (thread.tags && thread.tags.length > 0) {
+    lines.push(`Tags:        ${formatTags(thread.tags)}`);
+  }
 
   if (thread.description) {
     lines.push('', `Description: ${thread.description}`);
@@ -141,7 +152,11 @@ export function formatThreadTreeLine(thread: Thread): string {
   const shortId = chalk.gray(`[${thread.id.slice(0, 8)}]`);
   const tempLabel = formatTemperature(thread.temperature);
   const stars = formatImportanceStars(thread.importance);
-  return `${chalk.bold(thread.name)} ${shortId} ${tempLabel} ${stars}`;
+  // Show primary tag (first tag) if available
+  const primaryTag = thread.tags && thread.tags.length > 0
+    ? ' ' + chalk.cyan(`#${thread.tags[0]}`)
+    : '';
+  return `${chalk.bold(thread.name)} ${shortId} ${tempLabel} ${stars}${primaryTag}`;
 }
 
 // Format a group header for tree view

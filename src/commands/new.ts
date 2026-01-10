@@ -13,6 +13,7 @@ export const newCommand = new Command('new')
   .option('-t, --temperature <temp>', 'Initial temperature (default: warm)', 'warm')
   .option('-z, --size <size>', 'Size estimate (default: medium)', 'medium')
   .option('-i, --importance <level>', 'Importance 1-5 (default: 3)')
+  .option('-T, --tags <tags>', 'Comma-separated tags')
   .action((name: string, options) => {
     // Apply defaults
     const importance = options.importance ? parseInt(options.importance) : 3;
@@ -45,6 +46,11 @@ export const newCommand = new Command('new')
       return;
     }
 
+    // Parse tags from comma-separated string
+    const tags: string[] = options.tags
+      ? options.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0)
+      : [];
+
     const now = new Date().toISOString();
     const thread: Thread = {
       id: uuidv4(),
@@ -56,6 +62,7 @@ export const newCommand = new Command('new')
       size: options.size as ThreadSize,
       parentId: null,
       groupId: null,
+      tags,
       dependencies: [],
       progress: [],
       details: [],

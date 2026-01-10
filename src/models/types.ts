@@ -44,6 +44,7 @@ export interface Thread {
   size: ThreadSize;
   parentId: string | null;  // for sub-threads
   groupId: string | null;
+  tags: string[];  // Array of tag strings
   dependencies: Dependency[];
   progress: ProgressEntry[];
   details: DetailsEntry[];  // Versioned snapshots, latest is current

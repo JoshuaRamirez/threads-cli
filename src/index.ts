@@ -13,6 +13,7 @@ import { archiveCommand } from './commands/archive';
 import { moveProgressCommand } from './commands/move-progress';
 import { overviewCommand } from './commands/overview';
 import { detailsCommand } from './commands/details';
+import { tagCommand } from './commands/tag';
 
 const program = new Command();
 
@@ -34,5 +35,6 @@ program.addCommand(archiveCommand);
 program.addCommand(overviewCommand);
 program.addCommand(moveProgressCommand);
 program.addCommand(detailsCommand);
+program.addCommand(tagCommand);
 
 program.parse();

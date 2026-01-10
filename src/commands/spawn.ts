@@ -26,6 +26,7 @@ export const spawnCommand = new Command('spawn')
   .option('-d, --description <desc>', 'Description of the sub-thread')
   .option('-z, --size <size>', 'Size estimate (default: inherits from parent or small)', 'small')
   .option('-i, --importance <level>', 'Importance 1-5 (default: inherits from parent)', parseInt)
+  .option('-T, --tags <tags>', 'Comma-separated tags')
   .action((parentIdentifier: string, name: string, options) => {
     const parent = findThread(parentIdentifier);
 
@@ -53,6 +54,11 @@ export const spawnCommand = new Command('spawn')
       return;
     }
 
+    // Parse tags from comma-separated string
+    const tags: string[] = options.tags
+      ? options.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0)
+      : [];
+
     const now = new Date().toISOString();
     const thread: Thread = {
       id: uuidv4(),
@@ -64,6 +70,7 @@ export const spawnCommand = new Command('spawn')
       size: options.size as ThreadSize,
       parentId: parent.id,
       groupId: parent.groupId,  // Inherit group from parent
+      tags,
       dependencies: [],
       progress: [],
       details: [],
