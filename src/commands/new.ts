@@ -58,6 +58,7 @@ export const newCommand = new Command('new')
       groupId: null,
       dependencies: [],
       progress: [],
+      details: [],
       createdAt: now,
       updatedAt: now
     };

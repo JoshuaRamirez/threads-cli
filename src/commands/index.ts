@@ -9,3 +9,4 @@ export { groupCommand } from './group';
 export { archiveCommand } from './archive';
 export { overviewCommand } from './overview';
 export { moveProgressCommand } from './move-progress';
+export { detailsCommand } from './details';

@@ -83,6 +83,17 @@ export function formatThreadDetail(thread: Thread): string {
     lines.push('', `Description: ${thread.description}`);
   }
 
+  // Show current details if present
+  if (thread.details && thread.details.length > 0) {
+    const current = thread.details[thread.details.length - 1];
+    const updatedDate = new Date(current.timestamp).toLocaleString();
+    lines.push('', `${chalk.bold('Details:')} ${chalk.dim(`(updated ${updatedDate})`)}`);
+    // Indent each line of content
+    current.content.split('\n').forEach(line => {
+      lines.push(`  ${line}`);
+    });
+  }
+
   if (thread.parentId) {
     lines.push(`Parent:      ${thread.parentId}`);
   }

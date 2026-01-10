@@ -66,6 +66,7 @@ export const spawnCommand = new Command('spawn')
       groupId: parent.groupId,  // Inherit group from parent
       dependencies: [],
       progress: [],
+      details: [],
       createdAt: now,
       updatedAt: now
     };

@@ -12,6 +12,7 @@ import { groupCommand } from './commands/group';
 import { archiveCommand } from './commands/archive';
 import { moveProgressCommand } from './commands/move-progress';
 import { overviewCommand } from './commands/overview';
+import { detailsCommand } from './commands/details';
 
 const program = new Command();
 
@@ -32,5 +33,6 @@ program.addCommand(groupCommand);
 program.addCommand(archiveCommand);
 program.addCommand(overviewCommand);
 program.addCommand(moveProgressCommand);
+program.addCommand(detailsCommand);
 
 program.parse();

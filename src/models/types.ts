@@ -17,6 +17,13 @@ export interface ProgressEntry {
   note: string;
 }
 
+// Details entry - versioned snapshot of current state
+export interface DetailsEntry {
+  id: string;
+  timestamp: string; // ISO date
+  content: string;
+}
+
 // Dependency with context
 export interface Dependency {
   threadId: string;
@@ -39,6 +46,7 @@ export interface Thread {
   groupId: string | null;
   dependencies: Dependency[];
   progress: ProgressEntry[];
+  details: DetailsEntry[];  // Versioned snapshots, latest is current
   createdAt: string;
   updatedAt: string;
 }
