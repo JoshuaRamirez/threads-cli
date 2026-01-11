@@ -8,7 +8,7 @@ A conversational thread tracker for managing streams of activity through self-re
 npm install -g @joshua2048/threads-cli
 ```
 
-Requires Node.js 18 or later.
+Requires Node.js 20 or later.
 
 ## Quick Start
 
