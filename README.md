@@ -54,8 +54,8 @@ threads merge <source> <target> # Merge threads
 ```bash
 threads progress <name> <note>  # Add progress entry
 threads move-progress <s> <t>   # Move progress between threads
-threads timeline [name]         # View progress timeline
-threads undo <name>             # Undo last progress entry
+threads timeline         # View progress timeline
+threads undo                    # Restore from backup
 ```
 
 ### Listing and Filtering
