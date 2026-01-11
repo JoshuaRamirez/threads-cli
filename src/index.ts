@@ -15,6 +15,13 @@ import { overviewCommand } from './commands/overview';
 import { detailsCommand } from './commands/details';
 import { tagCommand } from './commands/tag';
 import { batchCommand } from './commands/batch';
+import { agendaCommand } from './commands/agenda';
+import { cloneCommand } from './commands/clone';
+import { timelineCommand } from './commands/timeline';
+import { nextCommand } from './commands/next';
+import { searchCommand } from './commands/search';
+import { undoCommand } from './commands/undo';
+import { mergeCommand } from './commands/merge';
 
 const program = new Command();
 
@@ -38,5 +45,12 @@ program.addCommand(moveProgressCommand);
 program.addCommand(detailsCommand);
 program.addCommand(tagCommand);
 program.addCommand(batchCommand);
+program.addCommand(agendaCommand);
+program.addCommand(cloneCommand);
+program.addCommand(nextCommand);
+program.addCommand(timelineCommand);
+program.addCommand(searchCommand);
+program.addCommand(mergeCommand);
+program.addCommand(undoCommand);
 
 program.parse();

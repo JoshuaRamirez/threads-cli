@@ -5,6 +5,14 @@ import { ThreadsData, Thread, Group } from '../models';
 
 const DATA_DIR = path.join(os.homedir(), '.threads');
 const DATA_FILE = path.join(DATA_DIR, 'threads.json');
+const BACKUP_FILE = path.join(DATA_DIR, 'threads.backup.json');
+
+export interface BackupInfo {
+  exists: boolean;
+  timestamp?: Date;
+  threadCount?: number;
+  groupCount?: number;
+}
 
 // Ensure data directory and file exist
 function ensureDataFile(): void {
@@ -21,6 +29,13 @@ function ensureDataFile(): void {
   }
 }
 
+// Create backup of current data before modification
+function createBackup(): void {
+  if (fs.existsSync(DATA_FILE)) {
+    fs.copyFileSync(DATA_FILE, BACKUP_FILE);
+  }
+}
+
 // Load all data
 export function loadData(): ThreadsData {
   ensureDataFile();
@@ -28,10 +43,57 @@ export function loadData(): ThreadsData {
   return JSON.parse(raw) as ThreadsData;
 }
 
-// Save all data
+// Save all data (creates backup before writing)
 export function saveData(data: ThreadsData): void {
   ensureDataFile();
+  createBackup();
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+// Get backup info for display
+export function getBackupInfo(): BackupInfo {
+  if (!fs.existsSync(BACKUP_FILE)) {
+    return { exists: false };
+  }
+
+  const stats = fs.statSync(BACKUP_FILE);
+  const raw = fs.readFileSync(BACKUP_FILE, 'utf-8');
+  const data = JSON.parse(raw) as ThreadsData;
+
+  return {
+    exists: true,
+    timestamp: stats.mtime,
+    threadCount: data.threads.length,
+    groupCount: data.groups.length
+  };
+}
+
+// Load backup data (returns undefined if no backup exists)
+export function loadBackupData(): ThreadsData | undefined {
+  if (!fs.existsSync(BACKUP_FILE)) {
+    return undefined;
+  }
+  const raw = fs.readFileSync(BACKUP_FILE, 'utf-8');
+  return JSON.parse(raw) as ThreadsData;
+}
+
+// Restore from backup (swaps current with backup)
+export function restoreFromBackup(): boolean {
+  if (!fs.existsSync(BACKUP_FILE)) {
+    return false;
+  }
+
+  ensureDataFile();
+
+  // Read both files
+  const currentData = fs.readFileSync(DATA_FILE, 'utf-8');
+  const backupData = fs.readFileSync(BACKUP_FILE, 'utf-8');
+
+  // Swap: backup becomes current, current becomes backup
+  fs.writeFileSync(DATA_FILE, backupData);
+  fs.writeFileSync(BACKUP_FILE, currentData);
+
+  return true;
 }
 
 // Thread CRUD operations
@@ -129,4 +191,9 @@ export function deleteGroup(id: string): boolean {
 // Utility: get data file path (for debugging)
 export function getDataFilePath(): string {
   return DATA_FILE;
+}
+
+// Utility: get backup file path
+export function getBackupFilePath(): string {
+  return BACKUP_FILE;
 }
