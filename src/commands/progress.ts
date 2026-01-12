@@ -4,6 +4,25 @@ import { getThreadById, getThreadByName, getAllThreads, updateThread } from '../
 import { ProgressEntry } from '../models';
 import chalk from 'chalk';
 
+function parseDateTime(input: string): Date | null {
+  const date = new Date(input);
+  if (!isNaN(date.getTime())) {
+    return date;
+  }
+  const now = new Date();
+  const lower = input.toLowerCase();
+  if (lower === 'yesterday') {
+    now.setDate(now.getDate() - 1);
+    return now;
+  }
+  const daysAgoMatch = lower.match(/^(\d+)\s*days?\s*ago$/);
+  if (daysAgoMatch) {
+    now.setDate(now.getDate() - parseInt(daysAgoMatch[1]));
+    return now;
+  }
+  return null;
+}
+
 export const progressCommand = new Command('progress')
   .alias('p')
   .description('Add a progress note to a thread')
@@ -11,8 +30,8 @@ export const progressCommand = new Command('progress')
   .argument('<note>', 'Progress note to add')
   .option('--warm', 'Also set temperature to warm')
   .option('--hot', 'Also set temperature to hot')
+  .option('--at <datetime>', 'Set custom timestamp (e.g., "2026-01-10 3pm", "yesterday")')
   .action((identifier: string, note: string, options) => {
-    // Find the thread
     let thread = getThreadById(identifier);
     if (!thread) {
       thread = getThreadByName(identifier);
@@ -39,19 +58,27 @@ export const progressCommand = new Command('progress')
       return;
     }
 
-    // Create progress entry
+    // Parse timestamp
+    let timestamp = new Date().toISOString();
+    if (options.at) {
+      const parsed = parseDateTime(options.at);
+      if (!parsed) {
+        console.log(chalk.red(`Invalid datetime: "${options.at}"`));
+        return;
+      }
+      timestamp = parsed.toISOString();
+    }
+
     const entry: ProgressEntry = {
       id: uuidv4(),
-      timestamp: new Date().toISOString(),
+      timestamp,
       note
     };
 
-    // Build updates
     const updates: any = {
       progress: [...thread.progress, entry]
     };
 
-    // Optionally update temperature
     if (options.hot) {
       updates.temperature = 'hot';
     } else if (options.warm) {
