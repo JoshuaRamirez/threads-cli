@@ -51,3 +51,42 @@ Commands import from `storage` for data operations and `utils` for display. Stor
 1. Create `src/commands/<name>.ts` exporting a `Command` object
 2. Add export to `src/commands/index.ts`
 3. Import and register in `src/index.ts` via `program.addCommand()`
+
+## CLI Usage Notes
+
+### Shell Escaping
+- `$` characters get interpreted by the shell. Use `USD` or escape: `\$36.72`
+- Quotes in arguments need escaping or alternate quote styles
+
+### Multiline Content
+Shell strips newlines from arguments. For multiline details, use node directly:
+```javascript
+node -e "
+const { getAllThreads, updateThread } = require('./dist/storage');
+const { v4: uuidv4 } = require('uuid');
+const thread = getAllThreads().find(t => t.id.startsWith('PARTIAL_ID'));
+thread.details = [{
+  id: uuidv4(),
+  timestamp: new Date().toISOString(),
+  content: \`Line 1
+Line 2
+Line 3\`
+}];
+updateThread(thread.id, { details: thread.details });
+"
+```
+
+### Missing CLI Operations
+These require direct JSON editing or node scripts:
+- **Delete progress entries**: No CLI command, clear via `thread.progress = []`
+- **Edit existing progress/details**: No CLI command, modify array directly
+
+### Data Structure Tips
+- **Description**: Brief summary (single line preferred)
+- **Details**: Structured info snapshot (multiline, replaced on update)
+- **Progress**: Timestamped log entries (append-only via CLI)
+- Sub-threads via `spawn` inherit parent's group but not tags
+
+## Working Directory
+
+Use relative paths from repo root when working with this codebase. Run commands from the repo directory.
