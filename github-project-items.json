@@ -1,0 +1,1659 @@
+{
+  "project": {
+    "name": "Threads CLI - Hindsight Development Copy",
+    "description": "Reverse-engineered project items from commit history",
+    "created_from": "commit analysis",
+    "milestones": [
+      {
+        "name": "Foundation",
+        "description": "Core CLI infrastructure and basic commands",
+        "commits": ["72958ad"]
+      },
+      {
+        "name": "Enhanced Visualization",
+        "description": "Tree view and hierarchy improvements",
+        "commits": ["6203c36", "480f5f4"]
+      },
+      {
+        "name": "Activity Management",
+        "description": "Dashboard, progress migration, and details",
+        "commits": ["07a2684", "27677bb"]
+      },
+      {
+        "name": "Organization & Filtering",
+        "description": "Tags and batch operations",
+        "commits": ["d68eef6", "3f74995"]
+      },
+      {
+        "name": "Advanced Features",
+        "description": "Search, merge, clone, undo, agenda, and testing",
+        "commits": ["e7d11c4"]
+      },
+      {
+        "name": "Release & Distribution",
+        "description": "CI/CD, documentation, and enhancements",
+        "commits": ["d79b7ca", "a61c349", "2218cb9", "a6e9b58", "0a237bf", "b75b069", "3ed3b9e", "e12ee63", "acd429c"]
+      }
+    ],
+    "items": [
+      {
+        "id": 1,
+        "title": "Setup TypeScript CLI project with build tooling",
+        "status": "Done",
+        "milestone": "Foundation",
+        "commit": "72958ad",
+        "labels": ["feature", "infrastructure"],
+        "description": "Initialize Node.js project with TypeScript, Commander.js, chalk, uuid dependencies. Create tsconfig.json, package.json, and build scripts.",
+        "acceptance_criteria": [
+          "package.json created with all dependencies",
+          "tsconfig.json configured for CommonJS",
+          "Build script (npm run build) works",
+          ".gitignore includes node_modules and dist"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Implement core data models",
+        "status": "Done",
+        "milestone": "Foundation",
+        "commit": "72958ad",
+        "labels": ["feature", "backend"],
+        "description": "Create Thread, Group, Dependency TypeScript interfaces with enums for status, temperature, size, and importance.",
+        "acceptance_criteria": [
+          "Thread interface with all properties",
+          "Status enum: active, paused, stopped, completed, archived",
+          "Temperature enum: frozen, freezing, cold, tepid, warm, hot",
+          "Size enum: tiny, small, medium, large, huge",
+          "Importance: 1-5 numeric scale"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Create JSON storage layer with CRUD operations",
+        "status": "Done",
+        "milestone": "Foundation",
+        "commit": "72958ad",
+        "labels": ["feature", "backend"],
+        "description": "Build store.ts with file-based persistence at ~/.threads/threads.json. Implement getAllThreads, getThread, createThread, updateThread, deleteThread.",
+        "acceptance_criteria": [
+          "Data stored at ~/.threads/threads.json",
+          "Auto-create directory if not exists",
+          "CRUD functions for threads",
+          "CRUD functions for groups",
+          "Synchronous read/write operations"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Build CLI framework with Commander.js",
+        "status": "Done",
+        "milestone": "Foundation",
+        "commit": "72958ad",
+        "labels": ["feature", "infrastructure"],
+        "description": "Create index.ts entry point with command registration system and version metadata.",
+        "acceptance_criteria": [
+          "#!/usr/bin/env node shebang",
+          "Commander program setup",
+          "Command registration pattern",
+          "Version and description displayed"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Develop console formatting utilities",
+        "status": "Done",
+        "milestone": "Foundation",
+        "commit": "72958ad",
+        "labels": ["feature", "ui"],
+        "description": "Create format.ts with chalk-based color output, thread property formatters, error and success helpers.",
+        "acceptance_criteria": [
+          "Color-coded status display",
+          "Temperature formatting with colors",
+          "Size and importance formatters",
+          "Error/success message helpers",
+          "Consistent color scheme"
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Implement thread lifecycle commands",
+        "status": "Done",
+        "milestone": "Foundation",
+        "commit": "72958ad",
+        "labels": ["feature", "command"],
+        "description": "Build new, list, and show commands for basic thread management.",
+        "acceptance_criteria": [
+          "threads new <name> creates thread",
+          "threads list shows all threads",
+          "threads show <name> displays details",
+          "UUID generation works",
+          "Timestamps tracked"
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Add progress tracking functionality",
+        "status": "Done",
+        "milestone": "Foundation",
+        "commit": "72958ad",
+        "labels": ["feature", "command"],
+        "description": "Create progress command for timestamped append-only progress notes.",
+        "acceptance_criteria": [
+          "threads progress <name> <note> works",
+          "Timestamps auto-generated",
+          "Append-only (no edits)",
+          "Progress displayed in show command"
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Create property management",
+        "status": "Done",
+        "milestone": "Foundation",
+        "commit": "72958ad",
+        "labels": ["feature", "command"],
+        "description": "Implement set command for updating thread status, temperature, size, importance, and description.",
+        "acceptance_criteria": [
+          "threads set <name> status <value>",
+          "threads set <name> temperature <value>",
+          "threads set <name> size <value>",
+          "threads set <name> importance <value>",
+          "threads set <name> description <value>",
+          "Enum validation",
+          "UpdatedAt timestamp updated"
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Build hierarchical features",
+        "status": "Done",
+        "milestone": "Foundation",
+        "commit": "72958ad",
+        "labels": ["feature", "command"],
+        "description": "Add spawn command for sub-thread creation and depend command for thread relationships.",
+        "acceptance_criteria": [
+          "threads spawn <parent> <child> works",
+          "Parent-child via parentId",
+          "threads depend add <from> <to> works",
+          "threads depend remove works",
+          "threads depend list works",
+          "Dependency context (why/what/how/when)"
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Add organizational features",
+        "status": "Done",
+        "milestone": "Foundation",
+        "commit": "72958ad",
+        "labels": ["feature", "command"],
+        "description": "Implement group command for thread organization and archive command for thread lifecycle.",
+        "acceptance_criteria": [
+          "threads group new <name> creates group",
+          "threads group add <thread> <group> works",
+          "threads group remove works",
+          "threads archive <name> sets status",
+          "Option to archive descendants"
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Design tree view layout",
+        "status": "Done",
+        "milestone": "Enhanced Visualization",
+        "commit": "6203c36",
+        "labels": ["feature", "ui"],
+        "description": "Plan box-drawing character structure and nested display logic.",
+        "acceptance_criteria": [
+          "Tree structure defined",
+          "Groups at top level",
+          "Threads nested under groups",
+          "Sub-threads nested under parents",
+          "Alphabetical sorting"
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Implement box-drawing character rendering",
+        "status": "Done",
+        "milestone": "Enhanced Visualization",
+        "commit": "6203c36",
+        "labels": ["feature", "ui"],
+        "description": "Add ├── └── │ characters for visual hierarchy in tree view.",
+        "acceptance_criteria": [
+          "├── for middle children",
+          "└── for last child",
+          "│ for continuation lines",
+          "Proper indentation",
+          "Clear visual hierarchy"
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Add recursive tree building algorithm",
+        "status": "Done",
+        "milestone": "Enhanced Visualization",
+        "commit": "6203c36",
+        "labels": ["feature", "backend"],
+        "description": "Create buildThreadTree() function with recursive rendering.",
+        "acceptance_criteria": [
+          "buildThreadTree() function",
+          "Recursive child traversal",
+          "renderTree() function",
+          "Handles arbitrary depth",
+          "Maintains parent-child relationships"
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Update list command with tree/flat modes",
+        "status": "Done",
+        "milestone": "Enhanced Visualization",
+        "commit": "6203c36",
+        "labels": ["feature", "command"],
+        "description": "Make tree view default, add --flat flag for original view.",
+        "acceptance_criteria": [
+          "Tree view is default",
+          "--flat flag shows original list",
+          "Both modes respect filters",
+          "Consistent formatting"
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Test tree view with nested structures",
+        "status": "Done",
+        "milestone": "Enhanced Visualization",
+        "commit": "6203c36",
+        "labels": ["test"],
+        "description": "Verify tree rendering with multiple levels and groups.",
+        "acceptance_criteria": [
+          "Multiple level nesting works",
+          "Multiple groups display correctly",
+          "Empty groups handled",
+          "Large trees render properly"
+        ]
+      },
+      {
+        "id": 16,
+        "title": "Add parent property to set command",
+        "status": "Done",
+        "milestone": "Enhanced Visualization",
+        "commit": "480f5f4",
+        "labels": ["feature", "command"],
+        "description": "Enable 'threads set <thread> parent <target>' syntax.",
+        "acceptance_criteria": [
+          "threads set <thread> parent <target> works",
+          "Parent updated in thread object",
+          "Tree view reflects changes"
+        ]
+      },
+      {
+        "id": 17,
+        "title": "Implement parent validation",
+        "status": "Done",
+        "milestone": "Enhanced Visualization",
+        "commit": "480f5f4",
+        "labels": ["feature", "backend"],
+        "description": "Validate parent exists and prevent self-parenting.",
+        "acceptance_criteria": [
+          "Target thread existence check",
+          "Self-parenting blocked",
+          "Clear error messages",
+          "Validation before update"
+        ]
+      },
+      {
+        "id": 18,
+        "title": "Support removing parent",
+        "status": "Done",
+        "milestone": "Enhanced Visualization",
+        "commit": "480f5f4",
+        "labels": ["feature", "command"],
+        "description": "Allow 'threads set <thread> parent none' to make thread top-level.",
+        "acceptance_criteria": [
+          "'none' value removes parent",
+          "Thread becomes top-level",
+          "Tree view updates correctly"
+        ]
+      },
+      {
+        "id": 19,
+        "title": "Update help documentation for parent property",
+        "status": "Done",
+        "milestone": "Enhanced Visualization",
+        "commit": "480f5f4",
+        "labels": ["docs"],
+        "description": "Add parent property to set command documentation.",
+        "acceptance_criteria": [
+          "Help text includes parent",
+          "Examples provided",
+          "'none' value documented"
+        ]
+      },
+      {
+        "id": 20,
+        "title": "Design overview dashboard layout",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "07a2684",
+        "labels": ["feature", "ui"],
+        "description": "Plan sections for hot threads, recent activity, cold threads, and statistics.",
+        "acceptance_criteria": [
+          "4 main sections defined",
+          "Priority ordering clear",
+          "Statistics summary included",
+          "Time-based filtering planned"
+        ]
+      },
+      {
+        "id": 21,
+        "title": "Implement hot threads detection",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "07a2684",
+        "labels": ["feature", "backend"],
+        "description": "Filter threads with temperature >= warm.",
+        "acceptance_criteria": [
+          "Filters warm and hot threads",
+          "Sorted by temperature",
+          "Displays in overview"
+        ]
+      },
+      {
+        "id": 22,
+        "title": "Build recent activity tracker",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "07a2684",
+        "labels": ["feature", "backend"],
+        "description": "Show threads with progress within configurable threshold.",
+        "acceptance_criteria": [
+          "Configurable time threshold",
+          "Filters by progress timestamp",
+          "Shows last progress note",
+          "--days option works"
+        ]
+      },
+      {
+        "id": 23,
+        "title": "Add cold threads warning system",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "07a2684",
+        "labels": ["feature", "backend"],
+        "description": "Identify threads with no recent progress.",
+        "acceptance_criteria": [
+          "Detects stale threads",
+          "Configurable staleness threshold",
+          "Warning display in overview"
+        ]
+      },
+      {
+        "id": 24,
+        "title": "Create summary statistics calculator",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "07a2684",
+        "labels": ["feature", "backend"],
+        "description": "Count total, active, and completed threads.",
+        "acceptance_criteria": [
+          "Total thread count",
+          "Active thread count",
+          "Completed thread count",
+          "Displays in overview"
+        ]
+      },
+      {
+        "id": 25,
+        "title": "Implement move-progress command",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "07a2684",
+        "labels": ["feature", "command"],
+        "description": "Create command to move progress entries between threads.",
+        "acceptance_criteria": [
+          "threads move-progress <source> <target> works",
+          "Progress transferred correctly",
+          "Source updated",
+          "Target updated"
+        ]
+      },
+      {
+        "id": 26,
+        "title": "Support --last, --all, --count options",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "07a2684",
+        "labels": ["feature", "command"],
+        "description": "Add flexible progress entry selection modes.",
+        "acceptance_criteria": [
+          "--last moves last entry (default)",
+          "--all moves all entries",
+          "--count N moves N entries"
+        ]
+      },
+      {
+        "id": 27,
+        "title": "Add progress entry selection logic",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "07a2684",
+        "labels": ["feature", "backend"],
+        "description": "Implement logic to select which progress entries to move.",
+        "acceptance_criteria": [
+          "Selects from end by default",
+          "Respects count parameter",
+          "Handles edge cases (empty, insufficient)"
+        ]
+      },
+      {
+        "id": 28,
+        "title": "Preserve timestamps during migration",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "07a2684",
+        "labels": ["feature", "backend"],
+        "description": "Maintain original timestamps when moving progress.",
+        "acceptance_criteria": [
+          "Original timestamps preserved",
+          "Order maintained",
+          "No timestamp modification"
+        ]
+      },
+      {
+        "id": 29,
+        "title": "Design details data structure",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "27677bb",
+        "labels": ["feature", "backend"],
+        "description": "Plan versioned snapshot system distinct from append-only progress.",
+        "acceptance_criteria": [
+          "Latest-wins display model",
+          "Full version history kept",
+          "Distinct from progress",
+          "DetailEntry interface defined"
+        ]
+      },
+      {
+        "id": 30,
+        "title": "Extend Thread type with details array",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "27677bb",
+        "labels": ["feature", "backend"],
+        "description": "Add DetailEntry[] to Thread interface.",
+        "acceptance_criteria": [
+          "details: DetailEntry[] added",
+          "DetailEntry has id, timestamp, content",
+          "Type checking works"
+        ]
+      },
+      {
+        "id": 31,
+        "title": "Implement details command with CRUD operations",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "27677bb",
+        "labels": ["feature", "command"],
+        "description": "Build details command for viewing and updating thread details.",
+        "acceptance_criteria": [
+          "threads details <thread> shows current",
+          "threads details <thread> 'content' updates",
+          "UUID generated for entries",
+          "Timestamp tracked"
+        ]
+      },
+      {
+        "id": 32,
+        "title": "Add version history viewing",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "27677bb",
+        "labels": ["feature", "command"],
+        "description": "Support --history flag to show all detail versions.",
+        "acceptance_criteria": [
+          "--history flag implemented",
+          "Shows all versions chronologically",
+          "IDs and timestamps displayed"
+        ]
+      },
+      {
+        "id": 33,
+        "title": "Support stdin input for multiline details",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "27677bb",
+        "labels": ["feature", "command"],
+        "description": "Add --set flag for piping multiline content.",
+        "acceptance_criteria": [
+          "--set flag reads from stdin",
+          "Multiline content preserved",
+          "Works with pipe and redirect"
+        ]
+      },
+      {
+        "id": 34,
+        "title": "Integrate details display in show command",
+        "status": "Done",
+        "milestone": "Activity Management",
+        "commit": "27677bb",
+        "labels": ["feature", "ui"],
+        "description": "Show latest details in thread output.",
+        "acceptance_criteria": [
+          "Latest detail shown in show command",
+          "Formatted properly",
+          "Empty state handled"
+        ]
+      },
+      {
+        "id": 35,
+        "title": "Design tag data model",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "d68eef6",
+        "labels": ["feature", "backend"],
+        "description": "Add string array for flexible categorization.",
+        "acceptance_criteria": [
+          "tags: string[] added to Thread",
+          "No structure constraints",
+          "Case-sensitive"
+        ]
+      },
+      {
+        "id": 36,
+        "title": "Implement tag command with add/remove/clear",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "d68eef6",
+        "labels": ["feature", "command"],
+        "description": "Create full tag management command.",
+        "acceptance_criteria": [
+          "threads tag <thread> <tags...> adds",
+          "--remove <tags> removes tags",
+          "--clear removes all tags",
+          "Duplicate prevention"
+        ]
+      },
+      {
+        "id": 37,
+        "title": "Add tag filtering to list command",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "d68eef6",
+        "labels": ["feature", "command"],
+        "description": "Support --tag option for filtering threads.",
+        "acceptance_criteria": [
+          "--tag <tag> filters list",
+          "Works with tree view",
+          "Works with flat view",
+          "Combines with other filters"
+        ]
+      },
+      {
+        "id": 38,
+        "title": "Create tag display formatting",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "d68eef6",
+        "labels": ["feature", "ui"],
+        "description": "Show tags with colors in tree and show views.",
+        "acceptance_criteria": [
+          "Tags shown in tree view",
+          "Tags shown in show command",
+          "Color-coded display",
+          "Comma-separated list"
+        ]
+      },
+      {
+        "id": 39,
+        "title": "Support tags in new/spawn commands",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "d68eef6",
+        "labels": ["feature", "command"],
+        "description": "Add -T, --tags option to thread creation.",
+        "acceptance_criteria": [
+          "-T, --tags option in new command",
+          "-T, --tags option in spawn command",
+          "Comma-separated parsing",
+          "Empty tags array if not provided"
+        ]
+      },
+      {
+        "id": 40,
+        "title": "Prevent duplicate tags",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "d68eef6",
+        "labels": ["feature", "backend"],
+        "description": "Check for existing tags before adding.",
+        "acceptance_criteria": [
+          "Duplicate check before add",
+          "Only new tags added",
+          "No error on duplicates"
+        ]
+      },
+      {
+        "id": 41,
+        "title": "Design batch command architecture",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "3f74995",
+        "labels": ["feature", "backend"],
+        "description": "Plan match criteria and action system.",
+        "acceptance_criteria": [
+          "Match criteria defined",
+          "Action types defined",
+          "AND logic for criteria",
+          "Dry-run support planned"
+        ]
+      },
+      {
+        "id": 42,
+        "title": "Implement thread selection/matching system",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "3f74995",
+        "labels": ["feature", "backend"],
+        "description": "Build filtering logic for batch operations.",
+        "acceptance_criteria": [
+          "Multiple criteria supported",
+          "AND logic combines criteria",
+          "Returns matching thread set",
+          "Efficient filtering"
+        ]
+      },
+      {
+        "id": 43,
+        "title": "Add hierarchical selectors",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "3f74995",
+        "labels": ["feature", "command"],
+        "description": "Implement --under and --children options.",
+        "acceptance_criteria": [
+          "--under <thread> selects thread + descendants",
+          "--children <thread> selects direct children only",
+          "Recursive traversal for --under",
+          "Single level for --children"
+        ]
+      },
+      {
+        "id": 44,
+        "title": "Create field-based filters",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "3f74995",
+        "labels": ["feature", "command"],
+        "description": "Add 6 filter types: group, status, temp, tag, importance, size.",
+        "acceptance_criteria": [
+          "--group <group> filter",
+          "--status <status> filter",
+          "--temp <temperature> filter",
+          "--tag <tag> filter",
+          "--importance <level> filter",
+          "--size <size> filter"
+        ]
+      },
+      {
+        "id": 45,
+        "title": "Build action system",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "3f74995",
+        "labels": ["feature", "command"],
+        "description": "Implement 5 action types: tag add/remove, set, archive, progress.",
+        "acceptance_criteria": [
+          "tag add <tags> action",
+          "tag remove <tags> action",
+          "set <property> <value> action",
+          "archive action",
+          "progress <note> action"
+        ]
+      },
+      {
+        "id": 46,
+        "title": "Add dry-run preview mode",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "3f74995",
+        "labels": ["feature", "command"],
+        "description": "Support --dry-run flag for operation preview.",
+        "acceptance_criteria": [
+          "--dry-run flag implemented",
+          "Shows affected threads",
+          "Shows planned action",
+          "No modifications in dry-run"
+        ]
+      },
+      {
+        "id": 47,
+        "title": "Implement AND logic for filter combination",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "3f74995",
+        "labels": ["feature", "backend"],
+        "description": "Allow combining multiple criteria.",
+        "acceptance_criteria": [
+          "Multiple filters can combine",
+          "AND logic (intersection)",
+          "All criteria must match",
+          "Works with all filter types"
+        ]
+      },
+      {
+        "id": 48,
+        "title": "Add comprehensive error handling",
+        "status": "Done",
+        "milestone": "Organization & Filtering",
+        "commit": "3f74995",
+        "labels": ["feature", "backend"],
+        "description": "Validate inputs and provide clear error messages.",
+        "acceptance_criteria": [
+          "Invalid criteria rejected",
+          "Clear error messages",
+          "No partial updates on error",
+          "Safe operation"
+        ]
+      },
+      {
+        "id": 49,
+        "title": "Implement full-text search",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["feature", "command"],
+        "description": "Search across name, description, progress, details, tags.",
+        "acceptance_criteria": [
+          "Searches name field",
+          "Searches description",
+          "Searches progress content",
+          "Searches details content",
+          "Searches tags",
+          "Case-insensitive",
+          "Highlights matches"
+        ]
+      },
+      {
+        "id": 50,
+        "title": "Create timeline view",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["feature", "command"],
+        "description": "Build chronological progress view with date grouping.",
+        "acceptance_criteria": [
+          "All progress chronologically sorted",
+          "--thread filter works",
+          "Date grouping display",
+          "Thread name shown per entry"
+        ]
+      },
+      {
+        "id": 51,
+        "title": "Build next thread recommendation engine",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["feature", "command"],
+        "description": "Create scoring algorithm: importance × temperature × recency.",
+        "acceptance_criteria": [
+          "Scoring algorithm implemented",
+          "Top recommendation shown",
+          "Reasoning displayed",
+          "--count N for multiple suggestions",
+          "focus alias works"
+        ]
+      },
+      {
+        "id": 52,
+        "title": "Add merge command for thread consolidation",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["feature", "command"],
+        "description": "Combine threads with progress, tags, and child migration.",
+        "acceptance_criteria": [
+          "threads merge <source> <target> works",
+          "Progress merged chronologically",
+          "Details merged chronologically",
+          "Tags merged (union)",
+          "Children reparented to target",
+          "--delete-source option works"
+        ]
+      },
+      {
+        "id": 53,
+        "title": "Implement clone command with template support",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["feature", "command"],
+        "description": "Copy threads with optional children/progress/details.",
+        "acceptance_criteria": [
+          "threads clone <source> [name] works",
+          "Properties copied (except progress/details by default)",
+          "--with-children clones subtree",
+          "--with-progress includes progress",
+          "--with-details includes details",
+          "New UUIDs generated"
+        ]
+      },
+      {
+        "id": 54,
+        "title": "Create undo command with backup restoration",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["feature", "command"],
+        "description": "Restore from threads.json.backup file.",
+        "acceptance_criteria": [
+          "threads undo works",
+          "Restores from backup file",
+          "Confirmation prompt",
+          "Backup timestamp displayed"
+        ]
+      },
+      {
+        "id": 55,
+        "title": "Build agenda dashboard",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["feature", "command"],
+        "description": "Show high priority threads and recent activity.",
+        "acceptance_criteria": [
+          "High priority section (importance 4-5)",
+          "Due today section (if applicable)",
+          "Recent progress section",
+          "--daily and --weekly views",
+          "Prioritized ordering"
+        ]
+      },
+      {
+        "id": 56,
+        "title": "Setup Jest test framework with TypeScript",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["test", "infrastructure"],
+        "description": "Configure jest.config.js with ts-jest.",
+        "acceptance_criteria": [
+          "jest.config.js created",
+          "ts-jest configured",
+          "@types/jest installed",
+          "npm test script works",
+          "TypeScript tests run"
+        ]
+      },
+      {
+        "id": 57,
+        "title": "Write 322 comprehensive unit tests",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["test"],
+        "description": "Create 8 test suites covering all commands.",
+        "acceptance_criteria": [
+          "All tests pass",
+          "High code coverage",
+          "Edge cases tested",
+          "Error cases tested"
+        ]
+      },
+      {
+        "id": 58,
+        "title": "Create test coverage for all advanced commands",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["test"],
+        "description": "Test search, timeline, next, merge, clone, undo, agenda.",
+        "acceptance_criteria": [
+          "agenda.test.ts: 965 lines",
+          "clone.test.ts: 829 lines",
+          "merge.test.ts: 1195 lines",
+          "next.test.ts: 705 lines",
+          "search.test.ts: 775 lines",
+          "timeline.test.ts: 698 lines",
+          "undo.test.ts: 470 lines"
+        ]
+      },
+      {
+        "id": 59,
+        "title": "Add storage layer integration tests",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["test"],
+        "description": "Test CRUD operations and backup functionality.",
+        "acceptance_criteria": [
+          "store.test.ts: 460 lines",
+          "CRUD operations tested",
+          "Backup functionality tested",
+          "File I/O tested"
+        ]
+      },
+      {
+        "id": 60,
+        "title": "Implement test utilities and helpers",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["test"],
+        "description": "Create shared test fixtures and utilities.",
+        "acceptance_criteria": [
+          "Test fixtures created",
+          "Helper functions defined",
+          "Reusable across test files",
+          "Consistent test setup"
+        ]
+      },
+      {
+        "id": 61,
+        "title": "Implement auto-backup system",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["feature", "backend"],
+        "description": "Create backup before every write operation.",
+        "acceptance_criteria": [
+          "Backup created before save",
+          "threads.json.backup file",
+          "Automatic on all writes",
+          "Silent operation"
+        ]
+      },
+      {
+        "id": 62,
+        "title": "Create backup file management",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["feature", "backend"],
+        "description": "Manage threads.json.backup file creation.",
+        "acceptance_criteria": [
+          "Single backup file maintained",
+          "Latest state preserved",
+          "Overwrites previous backup"
+        ]
+      },
+      {
+        "id": 63,
+        "title": "Build restore functionality",
+        "status": "Done",
+        "milestone": "Advanced Features",
+        "commit": "e7d11c4",
+        "labels": ["feature", "backend"],
+        "description": "Implement restoration from backup for undo.",
+        "acceptance_criteria": [
+          "Reads backup file",
+          "Restores to main file",
+          "Validates backup exists",
+          "Error handling"
+        ]
+      },
+      {
+        "id": 64,
+        "title": "Setup GitHub Actions CI workflow",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["ci", "infrastructure"],
+        "description": "Create .github/workflows/ci.yml.",
+        "acceptance_criteria": [
+          ".github/workflows/ci.yml created",
+          "Triggers on push/PR",
+          "Runs npm test",
+          "Checkout and setup actions used"
+        ]
+      },
+      {
+        "id": 65,
+        "title": "Configure multi-platform testing",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["ci"],
+        "description": "Test on Ubuntu, Windows, macOS.",
+        "acceptance_criteria": [
+          "Ubuntu runner",
+          "Windows runner",
+          "macOS runner",
+          "Matrix strategy"
+        ]
+      },
+      {
+        "id": 66,
+        "title": "Create Node version matrix testing",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["ci"],
+        "description": "Test Node 18, 20, 22.",
+        "acceptance_criteria": [
+          "Node 18 tested",
+          "Node 20 tested",
+          "Node 22 tested",
+          "Matrix strategy"
+        ]
+      },
+      {
+        "id": 67,
+        "title": "Setup automated npm publish workflow",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["ci"],
+        "description": "Create .github/workflows/publish.yml.",
+        "acceptance_criteria": [
+          ".github/workflows/publish.yml created",
+          "npm publish action",
+          "Provenance enabled",
+          "Registry authentication"
+        ]
+      },
+      {
+        "id": 68,
+        "title": "Configure tag-based release triggers",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["ci"],
+        "description": "Trigger publish on v* tags.",
+        "acceptance_criteria": [
+          "Triggers on tags: v*",
+          "Version tags only",
+          "Automated release"
+        ]
+      },
+      {
+        "id": 69,
+        "title": "Write comprehensive README",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["docs"],
+        "description": "Create user documentation and usage guide.",
+        "acceptance_criteria": [
+          "README.md created",
+          "132 lines of content",
+          "All sections complete"
+        ]
+      },
+      {
+        "id": 70,
+        "title": "Document installation process",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["docs"],
+        "description": "Add npm install instructions.",
+        "acceptance_criteria": [
+          "npm install command documented",
+          "Node version requirement stated",
+          "Clear and concise"
+        ]
+      },
+      {
+        "id": 71,
+        "title": "Create quick start guide",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["docs"],
+        "description": "Add getting started examples.",
+        "acceptance_criteria": [
+          "Quick Start section",
+          "Example commands",
+          "Common workflows shown"
+        ]
+      },
+      {
+        "id": 72,
+        "title": "Document all commands with examples",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["docs"],
+        "description": "Complete command reference.",
+        "acceptance_criteria": [
+          "All commands listed",
+          "Syntax shown",
+          "Examples provided",
+          "Options documented"
+        ]
+      },
+      {
+        "id": 73,
+        "title": "Add development setup instructions",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["docs"],
+        "description": "Document dev workflow.",
+        "acceptance_criteria": [
+          "Development section",
+          "Build instructions",
+          "Test instructions",
+          "npm scripts documented"
+        ]
+      },
+      {
+        "id": 74,
+        "title": "Create MIT LICENSE file",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["docs"],
+        "description": "Add open source license.",
+        "acceptance_criteria": [
+          "LICENSE file created",
+          "MIT license text",
+          "Copyright holder: Joshua Ramirez",
+          "Year: 2026"
+        ]
+      },
+      {
+        "id": 75,
+        "title": "Configure npm package metadata",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["chore"],
+        "description": "Update package.json with complete metadata.",
+        "acceptance_criteria": [
+          "Name: threads-cli",
+          "Description added",
+          "Repository URL",
+          "Bugs URL",
+          "Homepage URL",
+          "Author field"
+        ]
+      },
+      {
+        "id": 76,
+        "title": "Add discoverability keywords",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["chore"],
+        "description": "Add relevant npm keywords.",
+        "acceptance_criteria": [
+          "9 keywords added",
+          "Relevant terms",
+          "npm search optimization"
+        ]
+      },
+      {
+        "id": 77,
+        "title": "Setup prepublish hooks",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["chore"],
+        "description": "Add prepublishOnly script.",
+        "acceptance_criteria": [
+          "prepublishOnly script added",
+          "Runs build",
+          "Runs tests",
+          "Prevents broken publishes"
+        ]
+      },
+      {
+        "id": 78,
+        "title": "Configure files for npm distribution",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "d79b7ca",
+        "labels": ["chore"],
+        "description": "Set files whitelist in package.json.",
+        "acceptance_criteria": [
+          "files array in package.json",
+          "dist/ included",
+          "README.md included",
+          "LICENSE included",
+          "src/ excluded"
+        ]
+      },
+      {
+        "id": 79,
+        "title": "Fix timeline command documentation",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "a61c349",
+        "labels": ["bug", "docs"],
+        "description": "Remove incorrect [name] argument from README.",
+        "acceptance_criteria": [
+          "timeline syntax corrected",
+          "No [name] argument",
+          "--thread option documented"
+        ]
+      },
+      {
+        "id": 80,
+        "title": "Fix undo command documentation",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "a61c349",
+        "labels": ["bug", "docs"],
+        "description": "Remove incorrect <name> argument from README.",
+        "acceptance_criteria": [
+          "undo syntax corrected",
+          "No arguments shown",
+          "Restores from backup documented"
+        ]
+      },
+      {
+        "id": 81,
+        "title": "Verify all command signatures in README",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "a61c349",
+        "labels": ["docs"],
+        "description": "Audit command syntax accuracy.",
+        "acceptance_criteria": [
+          "All commands reviewed",
+          "Syntax matches implementation",
+          "No more errors"
+        ]
+      },
+      {
+        "id": 82,
+        "title": "Scope npm package to @joshua2048/threads-cli",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "2218cb9",
+        "labels": ["chore"],
+        "description": "Change package name to scoped version.",
+        "acceptance_criteria": [
+          "package.json name updated",
+          "Scoped package format",
+          "npm ready"
+        ]
+      },
+      {
+        "id": 83,
+        "title": "Update documentation with scoped package name",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "2218cb9",
+        "labels": ["docs"],
+        "description": "Update README installation command.",
+        "acceptance_criteria": [
+          "README install command updated",
+          "Scoped name shown",
+          "Consistent throughout"
+        ]
+      },
+      {
+        "id": 84,
+        "title": "Update minimum Node version to 20",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "a6e9b58",
+        "labels": ["chore"],
+        "description": "Set engines.node >= 20.0.0.",
+        "acceptance_criteria": [
+          "package.json engines updated",
+          ">=20.0.0 required",
+          "Node 18 dropped"
+        ]
+      },
+      {
+        "id": 85,
+        "title": "Remove Node 18 from CI matrix",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "a6e9b58",
+        "labels": ["ci"],
+        "description": "Update CI workflow to test Node 20, 22 only.",
+        "acceptance_criteria": [
+          "Node 18 removed from matrix",
+          "Node 20 and 22 remain",
+          "CI runs successfully"
+        ]
+      },
+      {
+        "id": 86,
+        "title": "Document Node 20+ requirement",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "a6e9b58",
+        "labels": ["docs"],
+        "description": "Update README with Node version requirement.",
+        "acceptance_criteria": [
+          "README updated",
+          "Node 20+ stated",
+          "Clear requirement"
+        ]
+      },
+      {
+        "id": 87,
+        "title": "Justify change",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "a6e9b58",
+        "labels": ["docs"],
+        "description": "Explain uuid v13 ESM compatibility issue.",
+        "acceptance_criteria": [
+          "Reason documented",
+          "uuid v13 ESM issue explained",
+          "Node 18 EOL mentioned"
+        ]
+      },
+      {
+        "id": 88,
+        "title": "Revert package name to unscoped threads-cli",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "0a237bf",
+        "labels": ["chore"],
+        "description": "Change back to threads-cli.",
+        "acceptance_criteria": [
+          "package.json name reverted",
+          "Unscoped format",
+          "threads-cli"
+        ]
+      },
+      {
+        "id": 89,
+        "title": "Update installation documentation",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "0a237bf",
+        "labels": ["docs"],
+        "description": "Update README installation command.",
+        "acceptance_criteria": [
+          "README install command updated",
+          "Unscoped name shown",
+          "Matches package.json"
+        ]
+      },
+      {
+        "id": 90,
+        "title": "Document shell escaping issues and solutions",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "b75b069",
+        "labels": ["docs"],
+        "description": "Add notes about $ character handling.",
+        "acceptance_criteria": [
+          "CLAUDE.md updated",
+          "$ escaping documented",
+          "Workarounds provided"
+        ]
+      },
+      {
+        "id": 91,
+        "title": "Add multiline content workarounds",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "b75b069",
+        "labels": ["docs"],
+        "description": "Document node -e script workarounds.",
+        "acceptance_criteria": [
+          "Multiline section added",
+          "node -e examples",
+          "Shell limitation explained"
+        ]
+      },
+      {
+        "id": 92,
+        "title": "Document missing CLI operations",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "b75b069",
+        "labels": ["docs"],
+        "description": "List operations requiring JSON editing.",
+        "acceptance_criteria": [
+          "Missing operations listed",
+          "Delete progress mentioned",
+          "Edit existing progress mentioned",
+          "Workarounds provided"
+        ]
+      },
+      {
+        "id": 93,
+        "title": "Explain data structure differences",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "b75b069",
+        "labels": ["docs"],
+        "description": "Clarify description vs details vs progress.",
+        "acceptance_criteria": [
+          "Description: brief summary",
+          "Details: structured snapshot",
+          "Progress: append-only log",
+          "Clear distinctions"
+        ]
+      },
+      {
+        "id": 94,
+        "title": "Add practical usage examples",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "b75b069",
+        "labels": ["docs"],
+        "description": "Include real-world CLI usage patterns.",
+        "acceptance_criteria": [
+          "Examples added",
+          "Common scenarios covered",
+          "Helpful tips"
+        ]
+      },
+      {
+        "id": 95,
+        "title": "Add --group option to new command",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "3ed3b9e",
+        "labels": ["enhancement"],
+        "description": "Enable group assignment at creation time.",
+        "acceptance_criteria": [
+          "-g, --group option added",
+          "Assigns group on creation",
+          "Validates group exists"
+        ]
+      },
+      {
+        "id": 96,
+        "title": "Implement group validation",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "3ed3b9e",
+        "labels": ["enhancement"],
+        "description": "Validate group exists before assignment.",
+        "acceptance_criteria": [
+          "Group existence check",
+          "Error if not found",
+          "Clear error message"
+        ]
+      },
+      {
+        "id": 97,
+        "title": "Support group assignment at creation time",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "3ed3b9e",
+        "labels": ["enhancement"],
+        "description": "Assign thread to group in new command.",
+        "acceptance_criteria": [
+          "Group assigned on create",
+          "groupId set in thread",
+          "Works seamlessly"
+        ]
+      },
+      {
+        "id": 98,
+        "title": "Update help documentation",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "3ed3b9e",
+        "labels": ["docs"],
+        "description": "Document --group option.",
+        "acceptance_criteria": [
+          "Help text includes --group",
+          "Example provided",
+          "Clear usage"
+        ]
+      },
+      {
+        "id": 99,
+        "title": "Add --at option to progress command",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "e12ee63",
+        "labels": ["enhancement"],
+        "description": "Enable custom timestamps for progress entries.",
+        "acceptance_criteria": [
+          "--at option added",
+          "Accepts ISO 8601 dates",
+          "Overrides current timestamp"
+        ]
+      },
+      {
+        "id": 100,
+        "title": "Implement ISO 8601 date parsing",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "e12ee63",
+        "labels": ["enhancement"],
+        "description": "Parse date strings in --at option.",
+        "acceptance_criteria": [
+          "ISO 8601 format supported",
+          "new Date() parsing",
+          "Valid date object created"
+        ]
+      },
+      {
+        "id": 101,
+        "title": "Add date validation",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "e12ee63",
+        "labels": ["enhancement"],
+        "description": "Validate date format and values.",
+        "acceptance_criteria": [
+          "Invalid dates rejected",
+          "isNaN check",
+          "Clear error message"
+        ]
+      },
+      {
+        "id": 102,
+        "title": "Support backdated progress entries",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "e12ee63",
+        "labels": ["enhancement"],
+        "description": "Allow historical progress logging.",
+        "acceptance_criteria": [
+          "Past dates accepted",
+          "Use cases: batch entry, historical logs",
+          "Chronological order maintained"
+        ]
+      },
+      {
+        "id": 103,
+        "title": "Update help documentation with examples",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "e12ee63",
+        "labels": ["docs"],
+        "description": "Document --at option with date examples.",
+        "acceptance_criteria": [
+          "Help text includes --at",
+          "Date format examples",
+          "Clear usage"
+        ]
+      },
+      {
+        "id": 104,
+        "title": "Implement edit-progress command",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "acd429c",
+        "labels": ["feature"],
+        "description": "Create command for editing progress entries.",
+        "acceptance_criteria": [
+          "threads edit-progress <thread> command",
+          "Subcommands: edit, delete",
+          "120 lines of code"
+        ]
+      },
+      {
+        "id": 105,
+        "title": "Add interactive progress entry selection",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "acd429c",
+        "labels": ["feature"],
+        "description": "Build selection UI for progress entries.",
+        "acceptance_criteria": [
+          "Lists all progress entries",
+          "User selects entry",
+          "Index-based or interactive"
+        ]
+      },
+      {
+        "id": 106,
+        "title": "Support editing progress content",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "acd429c",
+        "labels": ["feature"],
+        "description": "Allow modifying progress text.",
+        "acceptance_criteria": [
+          "Edit subcommand works",
+          "Content updated",
+          "Timestamp preserved"
+        ]
+      },
+      {
+        "id": 107,
+        "title": "Support deleting progress entries",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "acd429c",
+        "labels": ["feature"],
+        "description": "Enable removal of progress entries.",
+        "acceptance_criteria": [
+          "Delete subcommand works",
+          "Entry removed from array",
+          "Confirmation shown"
+        ]
+      },
+      {
+        "id": 108,
+        "title": "Preserve timestamps during edits",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "acd429c",
+        "labels": ["feature"],
+        "description": "Maintain original timestamps when editing.",
+        "acceptance_criteria": [
+          "Timestamp unchanged on edit",
+          "Only content modified",
+          "Historical accuracy maintained"
+        ]
+      },
+      {
+        "id": 109,
+        "title": "Update command index and CLI registration",
+        "status": "Done",
+        "milestone": "Release & Distribution",
+        "commit": "acd429c",
+        "labels": ["feature"],
+        "description": "Register edit-progress command.",
+        "acceptance_criteria": [
+          "Added to commands/index.ts",
+          "Registered in index.ts",
+          "Available in CLI"
+        ]
+      }
+    ]
+  }
+}

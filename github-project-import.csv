@@ -1,0 +1,110 @@
+Title,Status,Milestone,Labels,Commit,Description
+Setup TypeScript CLI project with build tooling,Done,Foundation,"feature, infrastructure",72958ad,"Initialize Node.js project with TypeScript, Commander.js, chalk, uuid dependencies. Create tsconfig.json and build scripts."
+Implement core data models,Done,Foundation,"feature, backend",72958ad,"Create Thread, Group, Dependency TypeScript interfaces with enums for status, temperature, size, and importance."
+Create JSON storage layer with CRUD operations,Done,Foundation,"feature, backend",72958ad,"Build store.ts with file-based persistence at ~/.threads/threads.json. Implement getAllThreads, getThread, createThread, updateThread, deleteThread."
+Build CLI framework with Commander.js,Done,Foundation,"feature, infrastructure",72958ad,Create index.ts entry point with command registration system and version metadata.
+Develop console formatting utilities,Done,Foundation,"feature, ui",72958ad,"Create format.ts with chalk-based color output, thread property formatters, error and success helpers."
+Implement thread lifecycle commands,Done,Foundation,"feature, command",72958ad,"Build new, list, and show commands for basic thread management."
+Add progress tracking functionality,Done,Foundation,"feature, command",72958ad,Create progress command for timestamped append-only progress notes.
+Create property management,Done,Foundation,"feature, command",72958ad,"Implement set command for updating thread status, temperature, size, importance, and description."
+Build hierarchical features,Done,Foundation,"feature, command",72958ad,Add spawn command for sub-thread creation and depend command for thread relationships.
+Add organizational features,Done,Foundation,"feature, command",72958ad,Implement group command for thread organization and archive command for thread lifecycle.
+Design tree view layout,Done,Enhanced Visualization,"feature, ui",6203c36,Plan box-drawing character structure and nested display logic.
+Implement box-drawing character rendering,Done,Enhanced Visualization,"feature, ui",6203c36,Add ├── └── │ characters for visual hierarchy in tree view.
+Add recursive tree building algorithm,Done,Enhanced Visualization,"feature, backend",6203c36,Create buildThreadTree() function with recursive rendering.
+Update list command with tree/flat modes,Done,Enhanced Visualization,"feature, command",6203c36,"Make tree view default, add --flat flag for original view."
+Test tree view with nested structures,Done,Enhanced Visualization,test,6203c36,Verify tree rendering with multiple levels and groups.
+Add parent property to set command,Done,Enhanced Visualization,"feature, command",480f5f4,Enable 'threads set <thread> parent <target>' syntax.
+Implement parent validation,Done,Enhanced Visualization,"feature, backend",480f5f4,Validate parent exists and prevent self-parenting.
+Support removing parent,Done,Enhanced Visualization,"feature, command",480f5f4,Allow 'threads set <thread> parent none' to make thread top-level.
+Update help documentation for parent property,Done,Enhanced Visualization,docs,480f5f4,Add parent property to set command documentation.
+Design overview dashboard layout,Done,Activity Management,"feature, ui",07a2684,"Plan sections for hot threads, recent activity, cold threads, and statistics."
+Implement hot threads detection,Done,Activity Management,"feature, backend",07a2684,Filter threads with temperature >= warm.
+Build recent activity tracker,Done,Activity Management,"feature, backend",07a2684,Show threads with progress within configurable threshold.
+Add cold threads warning system,Done,Activity Management,"feature, backend",07a2684,Identify threads with no recent progress.
+Create summary statistics calculator,Done,Activity Management,"feature, backend",07a2684,"Count total, active, and completed threads."
+Implement move-progress command,Done,Activity Management,"feature, command",07a2684,Create command to move progress entries between threads.
+Support --last --all --count options,Done,Activity Management,"feature, command",07a2684,Add flexible progress entry selection modes.
+Add progress entry selection logic,Done,Activity Management,"feature, backend",07a2684,Implement logic to select which progress entries to move.
+Preserve timestamps during migration,Done,Activity Management,"feature, backend",07a2684,Maintain original timestamps when moving progress.
+Design details data structure,Done,Activity Management,"feature, backend",27677bb,Plan versioned snapshot system distinct from append-only progress.
+Extend Thread type with details array,Done,Activity Management,"feature, backend",27677bb,Add DetailEntry[] to Thread interface.
+Implement details command with CRUD operations,Done,Activity Management,"feature, command",27677bb,Build details command for viewing and updating thread details.
+Add version history viewing,Done,Activity Management,"feature, command",27677bb,Support --history flag to show all detail versions.
+Support stdin input for multiline details,Done,Activity Management,"feature, command",27677bb,Add --set flag for piping multiline content.
+Integrate details display in show command,Done,Activity Management,"feature, ui",27677bb,Show latest details in thread output.
+Design tag data model,Done,Organization & Filtering,"feature, backend",d68eef6,Add string array for flexible categorization.
+Implement tag command with add/remove/clear,Done,Organization & Filtering,"feature, command",d68eef6,Create full tag management command.
+Add tag filtering to list command,Done,Organization & Filtering,"feature, command",d68eef6,Support --tag option for filtering threads.
+Create tag display formatting,Done,Organization & Filtering,"feature, ui",d68eef6,Show tags with colors in tree and show views.
+Support tags in new/spawn commands,Done,Organization & Filtering,"feature, command",d68eef6,"Add -T, --tags option to thread creation."
+Prevent duplicate tags,Done,Organization & Filtering,"feature, backend",d68eef6,Check for existing tags before adding.
+Design batch command architecture,Done,Organization & Filtering,"feature, backend",3f74995,Plan match criteria and action system.
+Implement thread selection/matching system,Done,Organization & Filtering,"feature, backend",3f74995,Build filtering logic for batch operations.
+Add hierarchical selectors,Done,Organization & Filtering,"feature, command",3f74995,Implement --under and --children options.
+Create field-based filters,Done,Organization & Filtering,"feature, command",3f74995,"Add 6 filter types: group, status, temp, tag, importance, size."
+Build action system,Done,Organization & Filtering,"feature, command",3f74995,"Implement 5 action types: tag add/remove, set, archive, progress."
+Add dry-run preview mode,Done,Organization & Filtering,"feature, command",3f74995,Support --dry-run flag for operation preview.
+Implement AND logic for filter combination,Done,Organization & Filtering,"feature, backend",3f74995,Allow combining multiple criteria.
+Add comprehensive error handling,Done,Organization & Filtering,"feature, backend",3f74995,Validate inputs and provide clear error messages.
+Implement full-text search,Done,Advanced Features,"feature, command",e7d11c4,"Search across name, description, progress, details, tags."
+Create timeline view,Done,Advanced Features,"feature, command",e7d11c4,Build chronological progress view with date grouping.
+Build next thread recommendation engine,Done,Advanced Features,"feature, command",e7d11c4,Create scoring algorithm: importance × temperature × recency.
+Add merge command for thread consolidation,Done,Advanced Features,"feature, command",e7d11c4,"Combine threads with progress, tags, and child migration."
+Implement clone command with template support,Done,Advanced Features,"feature, command",e7d11c4,Copy threads with optional children/progress/details.
+Create undo command with backup restoration,Done,Advanced Features,"feature, command",e7d11c4,Restore from threads.json.backup file.
+Build agenda dashboard,Done,Advanced Features,"feature, command",e7d11c4,Show high priority threads and recent activity.
+Setup Jest test framework with TypeScript,Done,Advanced Features,"test, infrastructure",e7d11c4,Configure jest.config.js with ts-jest.
+Write 322 comprehensive unit tests,Done,Advanced Features,test,e7d11c4,Create 8 test suites covering all commands.
+Create test coverage for all advanced commands,Done,Advanced Features,test,e7d11c4,"Test search, timeline, next, merge, clone, undo, agenda."
+Add storage layer integration tests,Done,Advanced Features,test,e7d11c4,Test CRUD operations and backup functionality.
+Implement test utilities and helpers,Done,Advanced Features,test,e7d11c4,Create shared test fixtures and utilities.
+Implement auto-backup system,Done,Advanced Features,"feature, backend",e7d11c4,Create backup before every write operation.
+Create backup file management,Done,Advanced Features,"feature, backend",e7d11c4,Manage threads.json.backup file creation.
+Build restore functionality,Done,Advanced Features,"feature, backend",e7d11c4,Implement restoration from backup for undo.
+Setup GitHub Actions CI workflow,Done,Release & Distribution,"ci, infrastructure",d79b7ca,Create .github/workflows/ci.yml.
+Configure multi-platform testing,Done,Release & Distribution,ci,d79b7ca,"Test on Ubuntu, Windows, macOS."
+Create Node version matrix testing,Done,Release & Distribution,ci,d79b7ca,"Test Node 18, 20, 22."
+Setup automated npm publish workflow,Done,Release & Distribution,ci,d79b7ca,Create .github/workflows/publish.yml.
+Configure tag-based release triggers,Done,Release & Distribution,ci,d79b7ca,Trigger publish on v* tags.
+Write comprehensive README,Done,Release & Distribution,docs,d79b7ca,Create user documentation and usage guide.
+Document installation process,Done,Release & Distribution,docs,d79b7ca,Add npm install instructions.
+Create quick start guide,Done,Release & Distribution,docs,d79b7ca,Add getting started examples.
+Document all commands with examples,Done,Release & Distribution,docs,d79b7ca,Complete command reference.
+Add development setup instructions,Done,Release & Distribution,docs,d79b7ca,Document dev workflow.
+Create MIT LICENSE file,Done,Release & Distribution,docs,d79b7ca,Add open source license.
+Configure npm package metadata,Done,Release & Distribution,chore,d79b7ca,Update package.json with complete metadata.
+Add discoverability keywords,Done,Release & Distribution,chore,d79b7ca,Add relevant npm keywords.
+Setup prepublish hooks,Done,Release & Distribution,chore,d79b7ca,Add prepublishOnly script.
+Configure files for npm distribution,Done,Release & Distribution,chore,d79b7ca,Set files whitelist in package.json.
+Fix timeline command documentation,Done,Release & Distribution,"bug, docs",a61c349,Remove incorrect [name] argument from README.
+Fix undo command documentation,Done,Release & Distribution,"bug, docs",a61c349,Remove incorrect <name> argument from README.
+Verify all command signatures in README,Done,Release & Distribution,docs,a61c349,Audit command syntax accuracy.
+Scope npm package to @joshua2048/threads-cli,Done,Release & Distribution,chore,2218cb9,Change package name to scoped version.
+Update documentation with scoped package name,Done,Release & Distribution,docs,2218cb9,Update README installation command.
+Update minimum Node version to 20,Done,Release & Distribution,chore,a6e9b58,Set engines.node >= 20.0.0.
+Remove Node 18 from CI matrix,Done,Release & Distribution,ci,a6e9b58,"Update CI workflow to test Node 20, 22 only."
+Document Node 20+ requirement,Done,Release & Distribution,docs,a6e9b58,Update README with Node version requirement.
+Justify Node version change,Done,Release & Distribution,docs,a6e9b58,Explain uuid v13 ESM compatibility issue.
+Revert package name to unscoped threads-cli,Done,Release & Distribution,chore,0a237bf,Change back to threads-cli.
+Update installation documentation,Done,Release & Distribution,docs,0a237bf,Update README installation command.
+Document shell escaping issues and solutions,Done,Release & Distribution,docs,b75b069,Add notes about $ character handling.
+Add multiline content workarounds,Done,Release & Distribution,docs,b75b069,Document node -e script workarounds.
+Document missing CLI operations,Done,Release & Distribution,docs,b75b069,List operations requiring JSON editing.
+Explain data structure differences,Done,Release & Distribution,docs,b75b069,Clarify description vs details vs progress.
+Add practical usage examples,Done,Release & Distribution,docs,b75b069,Include real-world CLI usage patterns.
+Add --group option to new command,Done,Release & Distribution,enhancement,3ed3b9e,Enable group assignment at creation time.
+Implement group validation,Done,Release & Distribution,enhancement,3ed3b9e,Validate group exists before assignment.
+Support group assignment at creation time,Done,Release & Distribution,enhancement,3ed3b9e,Assign thread to group in new command.
+Update help documentation for --group,Done,Release & Distribution,docs,3ed3b9e,Document --group option.
+Add --at option to progress command,Done,Release & Distribution,enhancement,e12ee63,Enable custom timestamps for progress entries.
+Implement ISO 8601 date parsing,Done,Release & Distribution,enhancement,e12ee63,Parse date strings in --at option.
+Add date validation,Done,Release & Distribution,enhancement,e12ee63,Validate date format and values.
+Support backdated progress entries,Done,Release & Distribution,enhancement,e12ee63,Allow historical progress logging.
+Update help documentation with date examples,Done,Release & Distribution,docs,e12ee63,Document --at option with date examples.
+Implement edit-progress command,Done,Release & Distribution,feature,acd429c,Create command for editing progress entries.
+Add interactive progress entry selection,Done,Release & Distribution,feature,acd429c,Build selection UI for progress entries.
+Support editing progress content,Done,Release & Distribution,feature,acd429c,Allow modifying progress text.
+Support deleting progress entries,Done,Release & Distribution,feature,acd429c,Enable removal of progress entries.
+Preserve timestamps during edits,Done,Release & Distribution,feature,acd429c,Maintain original timestamps when editing.
+Update command index and CLI registration,Done,Release & Distribution,feature,acd429c,Register edit-progress command.
