@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { addThread, getThreadByName } from '../storage';
+import { addThread, getThreadByName, getGroupByName, getGroupById } from '../storage';
 import { Thread, ThreadStatus, Temperature, ThreadSize, Importance } from '../models';
 import { formatThreadSummary } from '../utils';
 import chalk from 'chalk';
@@ -14,6 +14,7 @@ export const newCommand = new Command('new')
   .option('-z, --size <size>', 'Size estimate (default: medium)', 'medium')
   .option('-i, --importance <level>', 'Importance 1-5 (default: 3)')
   .option('-T, --tags <tags>', 'Comma-separated tags')
+  .option('-g, --group <group>', 'Group name or ID to assign thread to')
   .action((name: string, options) => {
     // Apply defaults
     const importance = options.importance ? parseInt(options.importance) : 3;
@@ -46,6 +47,24 @@ export const newCommand = new Command('new')
       return;
     }
 
+    // Resolve group if provided
+    let groupId: string | null = null;
+    if (options.group) {
+      // Try by name first, then by ID
+      const groupByName = getGroupByName(options.group);
+      if (groupByName) {
+        groupId = groupByName.id;
+      } else {
+        const groupById = getGroupById(options.group);
+        if (groupById) {
+          groupId = groupById.id;
+        } else {
+          console.log(chalk.red(`Group "${options.group}" not found`));
+          return;
+        }
+      }
+    }
+
     // Parse tags from comma-separated string
     const tags: string[] = options.tags
       ? options.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0)
@@ -61,7 +80,7 @@ export const newCommand = new Command('new')
       temperature: options.temperature as Temperature,
       size: options.size as ThreadSize,
       parentId: null,
-      groupId: null,
+      groupId,
       tags,
       dependencies: [],
       progress: [],
