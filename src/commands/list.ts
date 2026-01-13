@@ -1,5 +1,5 @@
 import { Command, Option } from 'commander';
-import { getAllThreads, getAllGroups, getGroupById } from '../storage';
+import { getAllThreads, getAllGroups, getGroupById, getAllContainers } from '../storage';
 import { Thread, ThreadStatus, Temperature, ThreadSize, Importance } from '../models';
 import { formatThreadSummary, buildTree, renderTree } from '../utils';
 import chalk from 'chalk';
@@ -99,7 +99,16 @@ export const listCommand = new Command('list')
     } else {
       // Tree view (default)
       const groups = getAllGroups();
-      const tree = buildTree(threads, groups);
+      const containers = getAllContainers();
+      // Filter containers by group if group filter is active
+      let filteredContainers = containers;
+      if (options.group) {
+        const group = groups.find(g => g.name.toLowerCase() === options.group.toLowerCase());
+        if (group) {
+          filteredContainers = containers.filter(c => c.groupId === group.id);
+        }
+      }
+      const tree = buildTree(threads, groups, filteredContainers);
       const lines = renderTree(tree);
       lines.forEach(line => console.log(line));
     }
