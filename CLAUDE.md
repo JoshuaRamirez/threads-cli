@@ -26,6 +26,7 @@ Threads is a CLI tool for tracking streams of activity through self-reported pro
 ### Core Concepts
 
 - **Thread**: A stream of activity with status, temperature (momentum), size (scope), and importance
+- **Container**: Organizational node without momentum semantics (pure hierarchy)
 - **Progress**: Timestamped notes you report to yourself about a thread
 - **Details**: Versioned snapshots of structured information about a thread (latest is current)
 - **Sub-threads**: Threads can spawn children via `parentId`
@@ -37,8 +38,9 @@ Threads is a CLI tool for tracking streams of activity through self-reported pro
 ```
 src/index.ts           # CLI entry point, registers all commands via Commander
 src/commands/*.ts      # One file per command, each exports a Command object
-src/storage/store.ts   # JSON file I/O, CRUD operations for threads and groups
-src/models/types.ts    # All TypeScript types (Thread, Group, enums)
+src/storage/store.ts   # JSON file I/O, CRUD operations for threads, containers, groups
+src/config/            # CLI configuration (labels, display settings)
+src/models/types.ts    # All TypeScript types (Thread, Container, Group, enums)
 src/utils/format.ts    # Console output formatting with chalk
 ```
 
@@ -96,6 +98,29 @@ These require direct JSON editing or node scripts:
 - **Details**: Structured info snapshot (multiline, replaced on update)
 - **Progress**: Timestamped log entries (append-only via CLI)
 - Sub-threads via `spawn` inherit parent's group but not tags
+
+## Changelog Maintenance
+
+**Keep `CHANGELOG.md` updated after commits.** This project uses Keep a Changelog format.
+
+### Automated Support
+- **Hook**: A hookify rule in `.claude/` reminds you after git commits
+- **Command**: Run `/changelog` to auto-update from recent commits
+
+### Manual Process
+1. Add entries under `[Unreleased]` section
+2. Group by: Added, Changed, Fixed, Removed, Security
+3. Use format: `- **Feature** - description` for significant items
+4. Move `[Unreleased]` to versioned section on release
+
+### Commit Convention
+| Prefix | Section |
+|--------|---------|
+| feat: | Added |
+| fix: | Fixed |
+| refactor: | Changed |
+| docs: | (skip) |
+| chore: | (skip) |
 
 ## Working Directory
 
