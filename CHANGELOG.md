@@ -1,0 +1,80 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- **Container entity type** - organizational nodes without momentum semantics
+- **Config command** - `config show|get|set|reset` for customizing display labels
+- **Update command** - modify thread properties (status, temperature, tags, etc.)
+- Container CRUD operations and entity lookup functions in storage layer
+- Configurable labels for thread/container/group display prefixes
+- Container support in tree display with magenta styling
+
+### Changed
+- `--temp` is now the short form for `--temperature` (aliased for consistency)
+- `--tag` and `--tags` are now interchangeable across all commands
+- Tree display now supports mixed thread/container hierarchies
+
+## [1.0.0] - 2025-01-12
+
+### Added
+- **edit-progress command** - edit or delete existing progress entries
+- **--at option** - custom timestamps for progress entries
+- **--group option** - assign group on thread creation
+- CLI usage notes for shell escaping workarounds
+
+### Changed
+- Package name reverted to unscoped `threads-cli`
+- Dropped Node 18 support (EOL), now requires Node 20+
+
+## [0.9.0] - 2025-01-11
+
+### Added
+- **batch command** - bulk operations on filtered thread sets
+- **7 new commands** - complete, archive, pause, resume, stop, heat, cool
+- CI/CD workflows for GitHub Actions
+- npm publish configuration
+- Comprehensive test coverage
+
+### Fixed
+- Incorrect command syntax in README
+
+## [0.8.0] - 2025-01-10
+
+### Added
+- **Tags feature** - categorize threads with tags, filter by tag
+- **Details feature** - versioned thread snapshots with timestamps
+- **overview command** - quick summary of thread state
+- **move-progress command** - relocate progress entries between threads
+- Parent property support in set command
+
+## [0.7.0] - 2025-01-09
+
+### Added
+- **Hierarchical tree view** - nested display of threads and sub-threads
+- Group headers in list output
+- Unicode box-drawing characters for tree structure
+
+## [0.6.0] - 2025-01-08
+
+Initial npm package release.
+
+### Added
+- Core thread tracking with status, temperature, size, importance
+- Progress logging with timestamps
+- Sub-thread spawning via parentId
+- Group organization
+- JSON storage in `~/.threads/threads.json`
+- Commands: new, list, show, set, progress, spawn, group, groups, delete
+
+[Unreleased]: https://github.com/joshua2048/threads-cli/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/joshua2048/threads-cli/compare/v0.9.0...v1.0.0
+[0.9.0]: https://github.com/joshua2048/threads-cli/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/joshua2048/threads-cli/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/joshua2048/threads-cli/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/joshua2048/threads-cli/releases/tag/v0.6.0
