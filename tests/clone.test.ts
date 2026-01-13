@@ -776,7 +776,7 @@ describe('cloneCommand action', () => {
     mockGetThreadById.mockReturnValue(parent);
     mockGetThreadByName.mockReturnValue(undefined);
     mockGetAllThreads.mockReturnValue([parent, child]);
-    mockLoadData.mockReturnValue({ threads: [parent, child], groups: [], version: '1.0.0' });
+    mockLoadData.mockReturnValue({ threads: [parent, child], containers: [], groups: [], version: '1.0.0' });
 
     // Act
     await cloneCommand.parseAsync(['node', 'test', 'parent-id', '--with-children']);

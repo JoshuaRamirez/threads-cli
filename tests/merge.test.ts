@@ -90,6 +90,7 @@ function createMockThread(overrides: Partial<Thread> = {}): Thread {
 function createMockThreadsData(overrides: Partial<ThreadsData> = {}): ThreadsData {
   return {
     threads: [],
+    containers: [],
     groups: [],
     version: '1.0.0',
     ...overrides,

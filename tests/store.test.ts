@@ -21,6 +21,7 @@ const BACKUP_FILE = path.join(DATA_DIR, 'threads.backup.json');
 function createMockThreadsData(overrides: Partial<ThreadsData> = {}): ThreadsData {
   return {
     threads: [],
+    containers: [],
     groups: [],
     version: '1.0.0',
     ...overrides,
