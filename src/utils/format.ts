@@ -1,5 +1,6 @@
 import chalk from 'chalk';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Group } from '../models';
+import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Group, Container, Entity } from '../models';
+import { getLabel } from '../config';
 
 // Tree drawing characters (Unicode box-drawing)
 export const TreeChars = {
@@ -149,6 +150,8 @@ export function formatImportanceStars(imp: Importance): string {
 
 // Compact thread line for tree view
 export function formatThreadTreeLine(thread: Thread): string {
+  const threadLabel = getLabel('thread');
+  const labelPrefix = threadLabel ? chalk.green(threadLabel) + ' ' : '';
   const shortId = chalk.gray(`[${thread.id.slice(0, 8)}]`);
   const tempLabel = formatTemperature(thread.temperature);
   const stars = formatImportanceStars(thread.importance);
@@ -156,101 +159,136 @@ export function formatThreadTreeLine(thread: Thread): string {
   const primaryTag = thread.tags && thread.tags.length > 0
     ? ' ' + chalk.cyan(`#${thread.tags[0]}`)
     : '';
-  return `${chalk.bold(thread.name)} ${shortId} ${tempLabel} ${stars}${primaryTag}`;
+  return `${labelPrefix}${chalk.bold(thread.name)} ${shortId} ${tempLabel} ${stars}${primaryTag}`;
+}
+
+// Compact container line for tree view
+export function formatContainerTreeLine(container: Container): string {
+  const containerLabel = getLabel('container');
+  const shortId = chalk.gray(`[${container.id.slice(0, 8)}]`);
+  const labelIcon = containerLabel ? chalk.magenta(containerLabel) : '';
+  // Show primary tag (first tag) if available
+  const primaryTag = container.tags && container.tags.length > 0
+    ? ' ' + chalk.cyan(`#${container.tags[0]}`)
+    : '';
+  return `${labelIcon} ${chalk.bold.magenta(container.name)} ${shortId}${primaryTag}`;
 }
 
 // Format a group header for tree view
 export function formatGroupHeader(group: Group): string {
-  return chalk.bold.underline(group.name);
+  const groupLabel = getLabel('group');
+  return `${groupLabel}  ${chalk.bold.underline(group.name)}`;
+}
+
+// Check if entity is a container
+export function isContainer(entity: Entity): entity is Container {
+  return entity.type === 'container';
+}
+
+// Check if entity is a thread
+export function isThread(entity: Entity): entity is Thread {
+  return entity.type !== 'container';
 }
 
 // Node type for tree structure
 export interface TreeNode {
-  type: 'group' | 'thread' | 'ungrouped-header';
+  type: 'group' | 'thread' | 'container' | 'ungrouped-header';
   group?: Group;
   thread?: Thread;
+  container?: Container;
   children: TreeNode[];
 }
 
-// Build a tree structure from threads and groups
-export function buildTree(threads: Thread[], groups: Group[]): TreeNode[] {
+// Build a tree structure from entities (threads + containers) and groups
+export function buildTree(threads: Thread[], groups: Group[], containers: Container[] = []): TreeNode[] {
   const result: TreeNode[] = [];
+
+  // Combine all entities
+  const allEntities: Entity[] = [...threads, ...containers];
 
   // Create a map of groups by ID
   const groupMap = new Map<string, Group>();
   groups.forEach(g => groupMap.set(g.id, g));
 
-  // Create a map of threads by ID for quick lookup
-  const threadMap = new Map<string, Thread>();
-  threads.forEach(t => threadMap.set(t.id, t));
+  // Create a map of entities by ID for quick lookup
+  const entityMap = new Map<string, Entity>();
+  allEntities.forEach(e => entityMap.set(e.id, e));
 
-  // Separate threads by group
-  const threadsByGroup = new Map<string | null, Thread[]>();
-  threads.forEach(t => {
-    const groupId = t.groupId;
-    if (!threadsByGroup.has(groupId)) {
-      threadsByGroup.set(groupId, []);
+  // Separate entities by group
+  const entitiesByGroup = new Map<string | null, Entity[]>();
+  allEntities.forEach(e => {
+    const groupId = e.groupId;
+    if (!entitiesByGroup.has(groupId)) {
+      entitiesByGroup.set(groupId, []);
     }
-    threadsByGroup.get(groupId)!.push(t);
+    entitiesByGroup.get(groupId)!.push(e);
   });
 
-  // Helper: get child threads (sub-threads) of a given parent
-  function getChildren(parentId: string, groupThreads: Thread[]): Thread[] {
-    return groupThreads.filter(t => t.parentId === parentId);
+  // Helper: get child entities of a given parent
+  function getChildren(parentId: string, groupEntities: Entity[]): Entity[] {
+    return groupEntities.filter(e => e.parentId === parentId);
   }
 
-  // Helper: build thread nodes recursively
-  function buildThreadNode(thread: Thread, groupThreads: Thread[]): TreeNode {
-    const children = getChildren(thread.id, groupThreads);
-    return {
-      type: 'thread',
-      thread,
-      children: children.map(child => buildThreadNode(child, groupThreads))
-    };
+  // Helper: build entity nodes recursively
+  function buildEntityNode(entity: Entity, groupEntities: Entity[]): TreeNode {
+    const children = getChildren(entity.id, groupEntities);
+    if (isContainer(entity)) {
+      return {
+        type: 'container',
+        container: entity,
+        children: children.map(child => buildEntityNode(child, groupEntities))
+      };
+    } else {
+      return {
+        type: 'thread',
+        thread: entity as Thread,
+        children: children.map(child => buildEntityNode(child, groupEntities))
+      };
+    }
   }
 
-  // Process groups that have threads
+  // Process groups that have entities
   const processedGroupIds = new Set<string>();
 
   // Sort groups by name
   const sortedGroups = [...groups].sort((a, b) => a.name.localeCompare(b.name));
 
   for (const group of sortedGroups) {
-    const groupThreads = threadsByGroup.get(group.id) || [];
-    if (groupThreads.length === 0) continue;
+    const groupEntities = entitiesByGroup.get(group.id) || [];
+    if (groupEntities.length === 0) continue;
 
     processedGroupIds.add(group.id);
 
-    // Get root threads (those without a parent, or whose parent is not in this group)
-    const rootThreads = groupThreads.filter(t => {
-      if (!t.parentId) return true;
-      // Parent must be in the same group to be a sub-thread
-      const parent = threadMap.get(t.parentId);
+    // Get root entities (those without a parent, or whose parent is not in this group)
+    const rootEntities = groupEntities.filter(e => {
+      if (!e.parentId) return true;
+      // Parent must be in the same group to be a child
+      const parent = entityMap.get(e.parentId);
       return !parent || parent.groupId !== group.id;
     });
 
     const groupNode: TreeNode = {
       type: 'group',
       group,
-      children: rootThreads.map(t => buildThreadNode(t, groupThreads))
+      children: rootEntities.map(e => buildEntityNode(e, groupEntities))
     };
 
     result.push(groupNode);
   }
 
-  // Process ungrouped threads (groupId is null)
-  const ungroupedThreads = threadsByGroup.get(null) || [];
-  if (ungroupedThreads.length > 0) {
-    // Get root ungrouped threads
-    const rootUngrouped = ungroupedThreads.filter(t => {
-      if (!t.parentId) return true;
-      const parent = threadMap.get(t.parentId);
+  // Process ungrouped entities (groupId is null)
+  const ungroupedEntities = entitiesByGroup.get(null) || [];
+  if (ungroupedEntities.length > 0) {
+    // Get root ungrouped entities
+    const rootUngrouped = ungroupedEntities.filter(e => {
+      if (!e.parentId) return true;
+      const parent = entityMap.get(e.parentId);
       return !parent || parent.groupId !== null;
     });
 
     const ungroupedNode: TreeNode = {
       type: 'ungrouped-header',
-      children: rootUngrouped.map(t => buildThreadNode(t, ungroupedThreads))
+      children: rootUngrouped.map(e => buildEntityNode(e, ungroupedEntities))
     };
 
     result.push(ungroupedNode);
@@ -287,7 +325,19 @@ export function renderTree(nodes: TreeNode[]): string[] {
       const threadLine = formatThreadTreeLine(node.thread!);
       lines.push(prefix + connector + threadLine);
 
-      // Render children (sub-threads)
+      // Render children (sub-threads or containers)
+      const newPrefix = prefix + (isLast ? TreeChars.empty : TreeChars.vertical);
+      node.children.forEach((child, i) => {
+        const childIsLast = i === node.children.length - 1;
+        renderNode(child, newPrefix, childIsLast, false);
+      });
+    } else if (node.type === 'container') {
+      // Container line with tree drawing
+      const connector = isLast ? TreeChars.lastBranch : TreeChars.branch;
+      const containerLine = formatContainerTreeLine(node.container!);
+      lines.push(prefix + connector + containerLine);
+
+      // Render children (threads or containers)
       const newPrefix = prefix + (isLast ? TreeChars.empty : TreeChars.vertical);
       node.children.forEach((child, i) => {
         const childIsLast = i === node.children.length - 1;
