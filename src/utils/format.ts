@@ -174,6 +174,44 @@ export function formatContainerTreeLine(container: Container): string {
   return `${labelIcon} ${chalk.bold.magenta(container.name)} ${shortId}${primaryTag}`;
 }
 
+// Detailed container display
+export function formatContainerDetail(container: Container): string {
+  const lines = [
+    chalk.bold.underline.magenta(container.name) + chalk.dim(' (container)'),
+    '',
+    `ID:          ${container.id}`,
+    `Created:     ${new Date(container.createdAt).toLocaleString()}`,
+    `Updated:     ${new Date(container.updatedAt).toLocaleString()}`,
+  ];
+
+  if (container.tags && container.tags.length > 0) {
+    lines.push(`Tags:        ${formatTags(container.tags)}`);
+  }
+
+  if (container.description) {
+    lines.push('', `Description: ${container.description}`);
+  }
+
+  if (container.details && container.details.length > 0) {
+    const current = container.details[container.details.length - 1];
+    const updatedDate = new Date(current.timestamp).toLocaleString();
+    lines.push('', `${chalk.bold('Details:')} ${chalk.dim(`(updated ${updatedDate})`)}`);
+    current.content.split('\n').forEach(line => {
+      lines.push(`  ${line}`);
+    });
+  }
+
+  if (container.parentId) {
+    lines.push(`Parent:      ${container.parentId}`);
+  }
+
+  if (container.groupId) {
+    lines.push(`Group:       ${container.groupId}`);
+  }
+
+  return lines.join('\n');
+}
+
 // Format a group header for tree view
 export function formatGroupHeader(group: Group): string {
   const groupLabel = getLabel('group');

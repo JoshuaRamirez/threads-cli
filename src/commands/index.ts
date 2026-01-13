@@ -22,3 +22,4 @@ export { undoCommand } from './undo';
 export { mergeCommand } from './merge';
 export { updateCommand } from './update';
 export { configCommand } from './config';
+export { containerCommand } from './container';

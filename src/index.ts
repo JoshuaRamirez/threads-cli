@@ -25,6 +25,7 @@ import { undoCommand } from './commands/undo';
 import { mergeCommand } from './commands/merge';
 import { configCommand } from './commands/config';
 import { updateCommand } from './commands/update';
+import { containerCommand } from './commands/container';
 
 const program = new Command();
 
@@ -58,5 +59,6 @@ program.addCommand(mergeCommand);
 program.addCommand(undoCommand);
 program.addCommand(configCommand);
 program.addCommand(updateCommand);
+program.addCommand(containerCommand);
 
 program.parse();
