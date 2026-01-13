@@ -23,6 +23,8 @@ import { nextCommand } from './commands/next';
 import { searchCommand } from './commands/search';
 import { undoCommand } from './commands/undo';
 import { mergeCommand } from './commands/merge';
+import { configCommand } from './commands/config';
+import { updateCommand } from './commands/update';
 
 const program = new Command();
 
@@ -54,5 +56,7 @@ program.addCommand(timelineCommand);
 program.addCommand(searchCommand);
 program.addCommand(mergeCommand);
 program.addCommand(undoCommand);
+program.addCommand(configCommand);
+program.addCommand(updateCommand);
 
 program.parse();

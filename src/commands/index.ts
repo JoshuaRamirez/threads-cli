@@ -20,3 +20,5 @@ export { searchCommand } from './search';
 export { timelineCommand } from './timeline';
 export { undoCommand } from './undo';
 export { mergeCommand } from './merge';
+export { updateCommand } from './update';
+export { configCommand } from './config';
