@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
 import {
   getAllThreads,
@@ -380,6 +380,7 @@ export const batchCommand = new Command('batch')
   .option('--status <status>', 'By status (active, paused, stopped, completed, archived)')
   .option('--temp <temp>', 'By temperature (frozen, freezing, cold, tepid, warm, hot)')
   .option('--tag <tag>', 'Has this tag')
+  .addOption(new Option('--tags <tag>').hideHelp())
   .option('--importance <n>', 'By importance (supports: 4, 4+, 3-, etc.)')
   .option('--size <size>', 'By size (tiny, small, medium, large, huge)')
   .option('--dry-run', 'Preview without executing')
@@ -405,7 +406,7 @@ export const batchCommand = new Command('batch')
       }
       criteria.temp = options.temp;
     }
-    if (options.tag) criteria.tag = options.tag;
+    if (options.tag || options.tags) criteria.tag = options.tag || options.tags;
     if (options.importance) criteria.importance = options.importance;
     if (options.size) {
       if (!validSizes.includes(options.size)) {

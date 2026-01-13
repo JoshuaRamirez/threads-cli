@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
 import { addThread, getThreadByName, getGroupByName, getGroupById } from '../storage';
 import { Thread, ThreadStatus, Temperature, ThreadSize, Importance } from '../models';
@@ -10,13 +10,16 @@ export const newCommand = new Command('new')
   .argument('<name>', 'Name of the thread')
   .option('-d, --description <desc>', 'Description of the thread')
   .option('-s, --status <status>', 'Initial status (default: active)', 'active')
-  .option('-t, --temperature <temp>', 'Initial temperature (default: warm)', 'warm')
+  .option('-t, --temp <temp>', 'Initial temperature (default: warm)', 'warm')
+  .addOption(new Option('--temperature <temp>', 'Alias for --temp').hideHelp())
   .option('-z, --size <size>', 'Size estimate (default: medium)', 'medium')
   .option('-i, --importance <level>', 'Importance 1-5 (default: 3)')
   .option('-T, --tags <tags>', 'Comma-separated tags')
+  .addOption(new Option('--tag <tags>').hideHelp())
   .option('-g, --group <group>', 'Group name or ID to assign thread to')
   .action((name: string, options) => {
-    // Apply defaults
+    // Apply defaults - coalesce --temp and --temperature aliases
+    const temperatureValue = options.temp || options.temperature || 'warm';
     const importance = options.importance ? parseInt(options.importance) : 3;
     // Check for duplicate name
     const existing = getThreadByName(name);
@@ -34,7 +37,7 @@ export const newCommand = new Command('new')
       console.log(chalk.red(`Invalid status. Use: ${validStatuses.join(', ')}`));
       return;
     }
-    if (!validTemps.includes(options.temperature as Temperature)) {
+    if (!validTemps.includes(temperatureValue as Temperature)) {
       console.log(chalk.red(`Invalid temperature. Use: ${validTemps.join(', ')}`));
       return;
     }
@@ -66,8 +69,9 @@ export const newCommand = new Command('new')
     }
 
     // Parse tags from comma-separated string
-    const tags: string[] = options.tags
-      ? options.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0)
+    const tagsInput = options.tags || options.tag;
+    const tags: string[] = tagsInput
+      ? tagsInput.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0)
       : [];
 
     const now = new Date().toISOString();
@@ -77,7 +81,7 @@ export const newCommand = new Command('new')
       description: options.description || '',
       status: options.status as ThreadStatus,
       importance: importance as Importance,
-      temperature: options.temperature as Temperature,
+      temperature: temperatureValue as Temperature,
       size: options.size as ThreadSize,
       parentId: null,
       groupId,
