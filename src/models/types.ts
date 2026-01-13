@@ -33,8 +33,12 @@ export interface Dependency {
   when: string;
 }
 
+// Entity type discriminator
+export type EntityType = 'thread' | 'container';
+
 // Core Thread entity
 export interface Thread {
+  type?: 'thread';  // Optional for backward compat, defaults to 'thread'
   id: string;
   name: string;
   description: string;
@@ -52,6 +56,23 @@ export interface Thread {
   updatedAt: string;
 }
 
+// Container entity - organizational node without momentum semantics
+export interface Container {
+  type: 'container';
+  id: string;
+  name: string;
+  description: string;
+  parentId: string | null;  // for hierarchy
+  groupId: string | null;
+  tags: string[];
+  details: DetailsEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Union type for any entity that can be a parent/child
+export type Entity = Thread | Container;
+
 // Group for organizing threads
 export interface Group {
   id: string;
@@ -64,6 +85,7 @@ export interface Group {
 // The complete data store
 export interface ThreadsData {
   threads: Thread[];
+  containers: Container[];
   groups: Group[];
   version: string;
 }
