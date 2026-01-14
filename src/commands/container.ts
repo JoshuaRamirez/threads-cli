@@ -10,7 +10,8 @@ import {
   getAllGroups,
   getGroupByName,
   getAllThreads,
-  getAllEntities
+  getAllEntities,
+  updateThread
 } from '../storage';
 import { Container, Entity } from '../models';
 import { formatContainerDetail } from '../utils';
@@ -217,7 +218,38 @@ export const containerCommand = new Command('container')
         }
 
         updateContainer(container.id, updates);
-        console.log(chalk.green(`\nUpdated container "${container.name}"\n`));
+
+        // Cascade group change to all descendants
+        if (updates.groupId !== undefined) {
+          const allThreads = getAllThreads();
+          const allContainers = getAllContainers();
+          const newGroupId = updates.groupId;
+          let cascadeCount = 0;
+
+          // Recursive function to update all descendants
+          function cascadeGroup(parentId: string): void {
+            // Update child threads
+            allThreads.filter(t => t.parentId === parentId).forEach(t => {
+              updateThread(t.id, { groupId: newGroupId });
+              cascadeCount++;
+            });
+            // Update child containers and recurse
+            allContainers.filter(c => c.parentId === parentId).forEach(c => {
+              updateContainer(c.id, { groupId: newGroupId });
+              cascadeCount++;
+              cascadeGroup(c.id);
+            });
+          }
+
+          cascadeGroup(container.id);
+          if (cascadeCount > 0) {
+            console.log(chalk.green(`\nUpdated container "${container.name}" (+ ${cascadeCount} descendants)\n`));
+          } else {
+            console.log(chalk.green(`\nUpdated container "${container.name}"\n`));
+          }
+        } else {
+          console.log(chalk.green(`\nUpdated container "${container.name}"\n`));
+        }
         break;
       }
 
