@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Changelog automation** - `/changelog` command and hookify integration
 - **Cascading container delete** - `--cascade`, `--orphan`, `--move` options with `--dry-run` and `-f`
 - **Archive cascade** - `--cascade` option to archive/restore sub-threads together
+- **Focused list navigation** - `list <id>` for subtree, plus `--depth`, `--parent`, `--siblings`, `--path`
 - Container CRUD operations and entity lookup functions in storage layer
 - Configurable labels for thread/container/group display prefixes
 - Container support in `show` command with detailed view
