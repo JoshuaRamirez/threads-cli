@@ -60,15 +60,19 @@ function getSiblings(entity: Entity): Entity[] {
   return entities.filter(e => e.parentId === entity.parentId && e.id !== entity.id);
 }
 
+// Check if entity is a thread (has temperature property)
+function isThread(entity: Entity): entity is Thread {
+  return 'temperature' in entity;
+}
+
 // Render a subtree rooted at an entity
 function renderSubtree(root: Entity, descendants: Entity[], depth: number): string[] {
   const lines: string[] = [];
-  const threads = getAllThreads();
 
   function renderEntity(entity: Entity, prefix: string, isLast: boolean): void {
     const connector = isLast ? '└── ' : '├── ';
-    const icon = entity.type === 'container' ? chalk.magenta('📁') : chalk.blue('◆');
-    const thread = entity.type === 'thread' ? threads.find(t => t.id === entity.id) : null;
+    const icon = isThread(entity) ? chalk.blue('◆') : chalk.magenta('📁');
+    const thread = isThread(entity) ? entity as Thread : null;
 
     let info = '';
     if (thread) {
@@ -94,8 +98,8 @@ function renderSubtree(root: Entity, descendants: Entity[], depth: number): stri
   }
 
   // Render root
-  const icon = root.type === 'container' ? chalk.magenta('📁') : chalk.blue('◆');
-  const thread = root.type === 'thread' ? threads.find(t => t.id === root.id) : null;
+  const icon = isThread(root) ? chalk.blue('◆') : chalk.magenta('📁');
+  const thread = isThread(root) ? root as Thread : null;
   let info = '';
   if (thread) {
     const tempColors: Record<string, typeof chalk.red> = {
