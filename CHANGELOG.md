@@ -11,9 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Container entity type** - organizational nodes without momentum semantics
 - **Config command** - `config show|get|set|reset` for customizing display labels
 - **Update command** - modify thread properties (status, temperature, tags, etc.)
+- **Changelog automation** - `/changelog` command and hookify integration
 - Container CRUD operations and entity lookup functions in storage layer
 - Configurable labels for thread/container/group display prefixes
+- Container support in `show` command with detailed view
 - Container support in tree display with magenta styling
+
+### Fixed
+- Container group changes now cascade to all descendants
 
 ### Changed
 - `--temp` is now the short form for `--temperature` (aliased for consistency)
