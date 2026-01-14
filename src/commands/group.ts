@@ -10,7 +10,9 @@ import {
   getAllThreads,
   getThreadById,
   getThreadByName,
-  updateThread
+  updateThread,
+  getAllContainers,
+  updateContainer
 } from '../storage';
 import { Group } from '../models';
 import chalk from 'chalk';
@@ -162,12 +164,16 @@ export const groupCommand = new Command('group')
           return;
         }
 
-        // Remove group from all threads first
+        // Remove group from all threads and containers
         const threads = getAllThreads().filter(t => t.groupId === group.id);
+        const containers = getAllContainers().filter(c => c.groupId === group.id);
+
         threads.forEach(t => updateThread(t.id, { groupId: null }));
+        containers.forEach(c => updateContainer(c.id, { groupId: null }));
 
         deleteGroup(group.id);
-        console.log(chalk.green(`\nDeleted group "${group.name}" (${threads.length} thread(s) ungrouped)\n`));
+        const total = threads.length + containers.length;
+        console.log(chalk.green(`\nDeleted group "${group.name}" (${total} item(s) ungrouped)\n`));
         break;
       }
 
