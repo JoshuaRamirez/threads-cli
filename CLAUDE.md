@@ -92,7 +92,6 @@ updateThread(thread.id, { details: thread.details });
 **Always use CLI commands for data operations.** Do not manipulate `~/.threads/threads.json` directly with node scripts. If a CLI operation is missing, implement it first.
 
 ### Known CLI Gaps (to be fixed)
-- `set parent` only finds threads, not containers - needs fix to support containers
 - `new` command lacks `--parent` option - must create then `set parent`
 - **Delete progress entries**: No CLI command yet
 - **Edit existing progress/details**: No CLI command yet

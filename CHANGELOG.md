@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Container group changes now cascade to all descendants
 - Group delete now ungroups both threads and containers
+- `set parent` now supports containers as targets (not just threads)
 
 ### Changed
 - `--temp` is now the short form for `--temperature` (aliased for consistency)
