@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from '../storage';
-import { ThreadStatus, Temperature, ThreadSize, Importance } from '../models';
+import { getThreadById, getThreadByName, getAllThreads, updateThread, getAllEntities, getEntityById } from '../storage';
+import { ThreadStatus, Temperature, ThreadSize, Importance, Entity } from '../models';
 import { formatStatus, formatTemperature, formatSize, formatImportance } from '../utils';
 import chalk from 'chalk';
 
@@ -20,6 +20,20 @@ function findThread(identifier: string) {
     if (matches.length === 1) thread = matches[0];
   }
   return thread;
+}
+
+function findEntity(identifier: string): Entity | undefined {
+  const entities = getAllEntities();
+  let entity = entities.find(e => e.id === identifier);
+  if (!entity) entity = entities.find(e => e.name.toLowerCase() === identifier.toLowerCase());
+  if (!entity) {
+    const matches = entities.filter(e =>
+      e.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
+      e.name.toLowerCase().includes(identifier.toLowerCase())
+    );
+    if (matches.length === 1) entity = matches[0];
+  }
+  return entity;
 }
 
 export const setCommand = new Command('set')
@@ -93,17 +107,21 @@ export const setCommand = new Command('set')
           updates.parentId = null;
           displayValue = 'none';
         } else {
-          const parentThread = findThread(value);
-          if (!parentThread) {
-            console.log(chalk.red(`Parent thread "${value}" not found`));
+          const parentEntity = findEntity(value);
+          if (!parentEntity) {
+            console.log(chalk.red(`Parent "${value}" not found`));
             return;
           }
-          if (parentThread.id === thread.id) {
+          if (parentEntity.id === thread.id) {
             console.log(chalk.red('Thread cannot be its own parent'));
             return;
           }
-          updates.parentId = parentThread.id;
-          displayValue = parentThread.name;
+          updates.parentId = parentEntity.id;
+          // Inherit group from parent if it has one
+          if (parentEntity.groupId) {
+            updates.groupId = parentEntity.groupId;
+          }
+          displayValue = parentEntity.name;
         }
         break;
 
