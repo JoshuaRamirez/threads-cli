@@ -8,4 +8,10 @@ module.exports = {
   transform: {
     ...tsJestTransformCfg,
   },
+  collectCoverageFrom: [
+    "src/**/*.ts",
+    "!src/index.ts",
+  ],
+  coverageDirectory: "coverage",
+  coverageReporters: ["text", "text-summary", "html"],
 };
