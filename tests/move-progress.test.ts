@@ -1,0 +1,278 @@
+/**
+ * Unit tests for commands/move-progress.ts
+ */
+
+import { Thread } from '../src/models/types';
+
+// Mock storage module
+jest.mock('../src/storage', () => ({
+  getThreadById: jest.fn(),
+  getThreadByName: jest.fn(),
+  getAllThreads: jest.fn(),
+  updateThread: jest.fn(),
+}));
+
+// Mock chalk
+jest.mock('chalk', () => ({
+  red: jest.fn((s: string) => s),
+  green: jest.fn((s: string) => s),
+  yellow: jest.fn((s: string) => s),
+}));
+
+import {
+  getThreadById,
+  getThreadByName,
+  getAllThreads,
+  updateThread,
+} from '../src/storage';
+import { moveProgressCommand } from '../src/commands/move-progress';
+
+const mockGetThreadById = getThreadById as jest.MockedFunction<typeof getThreadById>;
+const mockGetThreadByName = getThreadByName as jest.MockedFunction<typeof getThreadByName>;
+const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;
+const mockUpdateThread = updateThread as jest.MockedFunction<typeof updateThread>;
+
+function createMockThread(overrides: Partial<Thread> = {}): Thread {
+  return {
+    id: 'test-id-123',
+    name: 'Test Thread',
+    description: '',
+    status: 'active',
+    importance: 3,
+    temperature: 'warm',
+    size: 'medium',
+    parentId: null,
+    groupId: null,
+    tags: [],
+    dependencies: [],
+    progress: [],
+    details: [],
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+describe('moveProgressCommand', () => {
+  let consoleSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
+  });
+
+  test('moveProgress_SourceNotFound_LogsError', async () => {
+    mockGetThreadById.mockReturnValue(undefined);
+    mockGetThreadByName.mockReturnValue(undefined);
+    mockGetAllThreads.mockReturnValue([]);
+
+    await moveProgressCommand.parseAsync(['node', 'test', 'nonexistent', 'dest']);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('not found'));
+  });
+
+  test('moveProgress_DestNotFound_LogsError', async () => {
+    const source = createMockThread({ id: 'src', name: 'Source' });
+    mockGetThreadById.mockImplementation((id) => id === 'src' ? source : undefined);
+    mockGetThreadByName.mockImplementation((name) => name === 'Source' ? source : undefined);
+    mockGetAllThreads.mockReturnValue([source]);
+
+    await moveProgressCommand.parseAsync(['node', 'test', 'src', 'nonexistent']);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Destination'));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('not found'));
+  });
+
+  test('moveProgress_SameSourceAndDest_LogsError', async () => {
+    const thread = createMockThread({ id: 't1', name: 'Thread' });
+    mockGetThreadById.mockReturnValue(thread);
+
+    await moveProgressCommand.parseAsync(['node', 'test', 't1', 't1']);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('cannot be the same'));
+  });
+
+  test('moveProgress_NoProgress_LogsError', async () => {
+    const source = createMockThread({ id: 'src', name: 'Source', progress: [] });
+    const dest = createMockThread({ id: 'dst', name: 'Dest' });
+    mockGetThreadById.mockImplementation((id) => {
+      if (id === 'src') return source;
+      if (id === 'dst') return dest;
+      return undefined;
+    });
+
+    await moveProgressCommand.parseAsync(['node', 'test', 'src', 'dst']);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('no progress entries'));
+  });
+
+  test('moveProgress_Default_MovesLastEntry', async () => {
+    const source = createMockThread({
+      id: 'src',
+      name: 'Source',
+      progress: [
+        { id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'First' },
+        { id: 'p2', timestamp: '2024-02-01T00:00:00.000Z', note: 'Last' },
+      ],
+    });
+    const dest = createMockThread({ id: 'dst', name: 'Dest', progress: [] });
+    mockGetThreadById.mockImplementation((id) => {
+      if (id === 'src') return source;
+      if (id === 'dst') return dest;
+      return undefined;
+    });
+
+    await moveProgressCommand.parseAsync(['node', 'test', 'src', 'dst']);
+
+    // Source should lose last entry
+    expect(mockUpdateThread).toHaveBeenCalledWith('src', {
+      progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'First' }],
+    });
+    // Dest should gain last entry
+    expect(mockUpdateThread).toHaveBeenCalledWith('dst', {
+      progress: expect.arrayContaining([
+        expect.objectContaining({ note: 'Last' }),
+      ]),
+    });
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Moved 1 progress entry'));
+  });
+
+  test('moveProgress_AllFlag_MovesAllEntries', async () => {
+    const source = createMockThread({
+      id: 'src',
+      name: 'Source',
+      progress: [
+        { id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'First' },
+        { id: 'p2', timestamp: '2024-02-01T00:00:00.000Z', note: 'Second' },
+      ],
+    });
+    const dest = createMockThread({ id: 'dst', name: 'Dest', progress: [] });
+    mockGetThreadById.mockImplementation((id) => {
+      if (id === 'src') return source;
+      if (id === 'dst') return dest;
+      return undefined;
+    });
+
+    await moveProgressCommand.parseAsync(['node', 'test', 'src', 'dst', '--all']);
+
+    // Source should be empty
+    expect(mockUpdateThread).toHaveBeenCalledWith('src', { progress: [] });
+    // Dest should have all entries
+    expect(mockUpdateThread).toHaveBeenCalledWith('dst', {
+      progress: expect.arrayContaining([
+        expect.objectContaining({ note: 'First' }),
+        expect.objectContaining({ note: 'Second' }),
+      ]),
+    });
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Moved 2 progress entries'));
+  });
+
+  test('moveProgress_CountFlag_MovesNEntries', async () => {
+    const source = createMockThread({
+      id: 'src',
+      name: 'Source',
+      progress: [
+        { id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'First' },
+        { id: 'p2', timestamp: '2024-02-01T00:00:00.000Z', note: 'Second' },
+        { id: 'p3', timestamp: '2024-03-01T00:00:00.000Z', note: 'Third' },
+      ],
+    });
+    const dest = createMockThread({ id: 'dst', name: 'Dest', progress: [] });
+    mockGetThreadById.mockImplementation((id) => {
+      if (id === 'src') return source;
+      if (id === 'dst') return dest;
+      return undefined;
+    });
+
+    await moveProgressCommand.parseAsync(['node', 'test', 'src', 'dst', '--count', '2']);
+
+    // Source should keep first entry
+    expect(mockUpdateThread).toHaveBeenCalledWith('src', {
+      progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'First' }],
+    });
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Moved 2 progress entries'));
+  });
+
+  test('moveProgress_CountExceedsAvailable_MovesAllWithWarning', async () => {
+    const source = createMockThread({
+      id: 'src',
+      name: 'Source',
+      progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'Only' }],
+    });
+    const dest = createMockThread({ id: 'dst', name: 'Dest', progress: [] });
+    mockGetThreadById.mockImplementation((id) => {
+      if (id === 'src') return source;
+      if (id === 'dst') return dest;
+      return undefined;
+    });
+
+    await moveProgressCommand.parseAsync(['node', 'test', 'src', 'dst', '--count', '10']);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('only has 1 progress'));
+    expect(mockUpdateThread).toHaveBeenCalledWith('src', { progress: [] });
+  });
+
+  test('moveProgress_MergesWithExisting_SortedByTimestamp', async () => {
+    const source = createMockThread({
+      id: 'src',
+      name: 'Source',
+      progress: [{ id: 'p2', timestamp: '2024-02-01T00:00:00.000Z', note: 'From source' }],
+    });
+    const dest = createMockThread({
+      id: 'dst',
+      name: 'Dest',
+      progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'Already here' }],
+    });
+    mockGetThreadById.mockImplementation((id) => {
+      if (id === 'src') return source;
+      if (id === 'dst') return dest;
+      return undefined;
+    });
+
+    await moveProgressCommand.parseAsync(['node', 'test', 'src', 'dst']);
+
+    // Destination should have both entries sorted by timestamp
+    expect(mockUpdateThread).toHaveBeenCalledWith('dst', {
+      progress: [
+        expect.objectContaining({ note: 'Already here' }),
+        expect.objectContaining({ note: 'From source' }),
+      ],
+    });
+  });
+
+  test('moveProgress_ZeroCount_LogsError', async () => {
+    const source = createMockThread({
+      id: 'src',
+      name: 'Source',
+      progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'Note' }],
+    });
+    const dest = createMockThread({ id: 'dst', name: 'Dest', progress: [] });
+    mockGetThreadById.mockImplementation((id) => {
+      if (id === 'src') return source;
+      if (id === 'dst') return dest;
+      return undefined;
+    });
+
+    await moveProgressCommand.parseAsync(['node', 'test', 'src', 'dst', '--count', '0']);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('must be a positive number'));
+    expect(mockUpdateThread).not.toHaveBeenCalled();
+  });
+
+  test('moveProgress_MultipleSourceMatches_LogsAmbiguity', async () => {
+    mockGetThreadById.mockReturnValue(undefined);
+    mockGetThreadByName.mockReturnValue(undefined);
+    mockGetAllThreads.mockReturnValue([
+      createMockThread({ id: 'abc-1', name: 'ABC 1' }),
+      createMockThread({ id: 'abc-2', name: 'ABC 2' }),
+    ]);
+
+    await moveProgressCommand.parseAsync(['node', 'test', 'abc', 'dest']);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Multiple threads match'));
+  });
+});
