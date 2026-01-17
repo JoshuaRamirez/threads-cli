@@ -1,9 +1,36 @@
 import { Command, Option } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { addThread, getThreadByName, getGroupByName, getGroupById } from '../storage';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance } from '../models';
+import { addThread, getThreadByName, getGroupByName, getGroupById, getThreadById, getAllThreads, getContainerById, getAllContainers } from '../storage';
+import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Entity } from '../models';
 import { formatThreadSummary } from '../utils';
 import chalk from 'chalk';
+
+function findParent(identifier: string): Entity | undefined {
+  // Try threads first
+  let entity: Entity | undefined = getThreadById(identifier);
+  if (!entity) entity = getThreadByName(identifier);
+  if (!entity) {
+    const threads = getAllThreads();
+    const matches = threads.filter(t =>
+      t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
+      t.name.toLowerCase().includes(identifier.toLowerCase())
+    );
+    if (matches.length === 1) entity = matches[0];
+  }
+  // Try containers
+  if (!entity) {
+    entity = getContainerById(identifier);
+  }
+  if (!entity) {
+    const containers = getAllContainers();
+    const matches = containers.filter(c =>
+      c.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
+      c.name.toLowerCase().includes(identifier.toLowerCase())
+    );
+    if (matches.length === 1) entity = matches[0];
+  }
+  return entity;
+}
 
 export const newCommand = new Command('new')
   .description('Create a new thread')
@@ -17,6 +44,7 @@ export const newCommand = new Command('new')
   .option('-T, --tags <tags>', 'Comma-separated tags')
   .addOption(new Option('--tag <tags>').hideHelp())
   .option('-g, --group <group>', 'Group name or ID to assign thread to')
+  .option('-p, --parent <parent>', 'Parent thread or container (creates sub-thread)')
   .action((name: string, options) => {
     // Apply defaults - coalesce --temp and --temperature aliases
     const temperatureValue = options.temp || options.temperature || 'warm';
@@ -50,7 +78,19 @@ export const newCommand = new Command('new')
       return;
     }
 
-    // Resolve group if provided
+    // Resolve parent if provided
+    let parentId: string | null = null;
+    let parentEntity: Entity | undefined;
+    if (options.parent) {
+      parentEntity = findParent(options.parent);
+      if (!parentEntity) {
+        console.log(chalk.red(`Parent "${options.parent}" not found`));
+        return;
+      }
+      parentId = parentEntity.id;
+    }
+
+    // Resolve group - explicit option takes precedence, then inherit from parent
     let groupId: string | null = null;
     if (options.group) {
       // Try by name first, then by ID
@@ -66,6 +106,9 @@ export const newCommand = new Command('new')
           return;
         }
       }
+    } else if (parentEntity?.groupId) {
+      // Inherit group from parent
+      groupId = parentEntity.groupId;
     }
 
     // Parse tags from comma-separated string
@@ -83,7 +126,7 @@ export const newCommand = new Command('new')
       importance: importance as Importance,
       temperature: temperatureValue as Temperature,
       size: options.size as ThreadSize,
-      parentId: null,
+      parentId,
       groupId,
       tags,
       dependencies: [],

@@ -75,8 +75,6 @@ Commands import from `storage` for data operations and `utils` for display. Stor
 **Always use CLI commands for data operations.** Do not manipulate `~/.threads/threads.json` directly. If a CLI operation is missing, implement it first.
 
 ### Known CLI Gaps
-- `new` command lacks `--parent` option - must create then `set parent`
-- Delete/edit progress entries - use `edit-progress` command
 - Multiline content requires shell heredocs or escaping
 
 ### Data Structure Tips

@@ -13,6 +13,10 @@ jest.mock('uuid', () => ({
 jest.mock('../src/storage', () => ({
   addThread: jest.fn(),
   getThreadByName: jest.fn(),
+  getThreadById: jest.fn(),
+  getAllThreads: jest.fn(),
+  getContainerById: jest.fn(),
+  getAllContainers: jest.fn(),
   getGroupByName: jest.fn(),
   getGroupById: jest.fn(),
 }));
@@ -31,6 +35,10 @@ jest.mock('chalk', () => ({
 import {
   addThread,
   getThreadByName,
+  getThreadById,
+  getAllThreads,
+  getContainerById,
+  getAllContainers,
   getGroupByName,
   getGroupById,
 } from '../src/storage';
@@ -38,8 +46,34 @@ import { newCommand } from '../src/commands/new';
 
 const mockAddThread = addThread as jest.MockedFunction<typeof addThread>;
 const mockGetThreadByName = getThreadByName as jest.MockedFunction<typeof getThreadByName>;
+const mockGetThreadById = getThreadById as jest.MockedFunction<typeof getThreadById>;
+const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;
+const mockGetContainerById = getContainerById as jest.MockedFunction<typeof getContainerById>;
+const mockGetAllContainers = getAllContainers as jest.MockedFunction<typeof getAllContainers>;
 const mockGetGroupByName = getGroupByName as jest.MockedFunction<typeof getGroupByName>;
 const mockGetGroupById = getGroupById as jest.MockedFunction<typeof getGroupById>;
+
+function createMockThread(overrides: Partial<Thread> = {}): Thread {
+  return {
+    id: 'test-id-123',
+    name: 'Test Thread',
+    type: 'thread',
+    description: '',
+    status: 'active',
+    importance: 3,
+    temperature: 'warm',
+    size: 'medium',
+    parentId: null,
+    groupId: null,
+    tags: [],
+    dependencies: [],
+    progress: [],
+    details: [],
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
 
 function createMockGroup(overrides: Partial<Group> = {}): Group {
   return {
@@ -60,6 +94,11 @@ describe('newCommand', () => {
     consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-06-15T12:00:00.000Z'));
+    // Default mock returns
+    mockGetThreadById.mockReturnValue(undefined);
+    mockGetAllThreads.mockReturnValue([]);
+    mockGetContainerById.mockReturnValue(undefined);
+    mockGetAllContainers.mockReturnValue([]);
   });
 
   afterEach(() => {
@@ -225,5 +264,62 @@ describe('newCommand', () => {
     await newCommand.parseAsync(['node', 'test', 'Thread']);
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Thread created'));
+  });
+
+  test('new_WithParent_SetsParentId', async () => {
+    const parent = createMockThread({ id: 'parent-1', name: 'Parent Thread' });
+    mockGetThreadByName.mockReturnValue(undefined);
+    mockGetThreadById.mockReturnValue(parent);
+
+    await newCommand.parseAsync(['node', 'test', 'Child', '-p', 'parent-1']);
+
+    expect(mockAddThread).toHaveBeenCalledWith(
+      expect.objectContaining({ parentId: 'parent-1' })
+    );
+  });
+
+  test('new_WithParent_InheritsGroup', async () => {
+    const parent = createMockThread({ id: 'parent-1', groupId: 'grp-1' });
+    mockGetThreadByName.mockReturnValue(undefined);
+    mockGetThreadById.mockReturnValue(parent);
+
+    await newCommand.parseAsync(['node', 'test', 'Child', '-p', 'parent-1']);
+
+    expect(mockAddThread).toHaveBeenCalledWith(
+      expect.objectContaining({ groupId: 'grp-1' })
+    );
+  });
+
+  test('new_WithParentAndGroup_ExplicitGroupWins', async () => {
+    const parent = createMockThread({ id: 'parent-1', groupId: 'parent-grp' });
+    const explicitGroup = createMockGroup({ id: 'explicit-grp' });
+    mockGetThreadByName.mockReturnValue(undefined);
+    mockGetThreadById.mockReturnValue(parent);
+    mockGetGroupByName.mockReturnValue(explicitGroup);
+
+    await newCommand.parseAsync(['node', 'test', 'Child', '-p', 'parent-1', '-g', 'Test Group']);
+
+    expect(mockAddThread).toHaveBeenCalledWith(
+      expect.objectContaining({ groupId: 'explicit-grp' })
+    );
+  });
+
+  test('new_ParentNotFound_LogsError', async () => {
+    mockGetThreadByName.mockReturnValue(undefined);
+
+    await newCommand.parseAsync(['node', 'test', 'Child', '-p', 'nonexistent']);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('not found'));
+    expect(mockAddThread).not.toHaveBeenCalled();
+  });
+
+  test('new_WithoutParent_ParentIdIsNull', async () => {
+    mockGetThreadByName.mockReturnValue(undefined);
+
+    await newCommand.parseAsync(['node', 'test', 'Thread']);
+
+    expect(mockAddThread).toHaveBeenCalledWith(
+      expect.objectContaining({ parentId: null })
+    );
   });
 });
