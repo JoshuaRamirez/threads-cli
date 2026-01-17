@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Per-module documentation** - CLAUDE.md files for commands, config, models, storage, utils, tests
 - **Container entity type** - organizational nodes without momentum semantics
 - **Config command** - `config show|get|set|reset` for customizing display labels
 - **Update command** - modify thread properties (status, temperature, tags, etc.)
@@ -26,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `set parent` now supports containers as targets (not just threads)
 
 ### Changed
+- **CLAUDE.md** - simplified documentation, added build/test commands
 - `--temp` is now the short form for `--temperature` (aliased for consistency)
 - `--tag` and `--tags` are now interchangeable across all commands
 - Tree display now supports mixed thread/container hierarchies
