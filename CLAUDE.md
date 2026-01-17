@@ -108,6 +108,25 @@ Commands import from `storage` for data operations and `utils` for display. Stor
 | docs: | (skip) |
 | chore: | (skip) |
 
+## Meta Thread Tracking
+
+**Update the threads-cli meta thread after significant commits.** The project tracks itself in the user's threads system.
+
+```bash
+threads progress threads-cli "brief description of what was done"
+```
+
+### When to Update
+- After feature implementations
+- After releases (include version number)
+- After significant refactors or test coverage changes
+- Skip for minor docs-only or chore commits
+
+### Style
+- Concise, present tense: "added X", "fixed Y", "refactored Z"
+- Include metrics when relevant: "test coverage: 19% to 71%"
+- No need for 1:1 commit mapping, summarize logical chunks
+
 ## Working Directory
 
 Use relative paths from repo root when working with this codebase. Run commands from the repo directory.
