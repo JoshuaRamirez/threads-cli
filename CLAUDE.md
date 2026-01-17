@@ -5,12 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build and Development Commands
 
 ```bash
-npm run build        # Compile TypeScript to dist/
+npm run build          # Compile TypeScript to dist/
 npm run dev -- <args>  # Run CLI directly via tsx (e.g., npm run dev -- list)
-npm run test         # Run Jest test suite
-npm run typecheck    # Type check without emitting
-npm link             # Install 'threads' command globally
-threads <command>    # Run installed CLI
+npm link               # Install 'threads' command globally
+threads <command>      # Run installed CLI
+npm test               # Run all tests
+npm test -- store      # Run single test file
+npm run typecheck      # Type checking only
 ```
 
 ## Architecture
@@ -70,31 +71,13 @@ Commands import from `storage` for data operations and `utils` for display. Stor
 - `$` characters get interpreted by the shell. Use `USD` or escape: `\$36.72`
 - Quotes in arguments need escaping or alternate quote styles
 
-### Multiline Content
-Shell strips newlines from arguments. For multiline details, use node directly:
-```javascript
-node -e "
-const { getAllThreads, updateThread } = require('./dist/storage');
-const { v4: uuidv4 } = require('uuid');
-const thread = getAllThreads().find(t => t.id.startsWith('PARTIAL_ID'));
-thread.details = [{
-  id: uuidv4(),
-  timestamp: new Date().toISOString(),
-  content: \`Line 1
-Line 2
-Line 3\`
-}];
-updateThread(thread.id, { details: thread.details });
-"
-```
-
 ### Important: Use CLI Commands
-**Always use CLI commands for data operations.** Do not manipulate `~/.threads/threads.json` directly with node scripts. If a CLI operation is missing, implement it first.
+**Always use CLI commands for data operations.** Do not manipulate `~/.threads/threads.json` directly. If a CLI operation is missing, implement it first.
 
-### Known CLI Gaps (to be fixed)
+### Known CLI Gaps
 - `new` command lacks `--parent` option - must create then `set parent`
-- **Delete progress entries**: No CLI command yet
-- **Edit existing progress/details**: No CLI command yet
+- Delete/edit progress entries - use `edit-progress` command
+- Multiline content requires shell heredocs or escaping
 
 ### Data Structure Tips
 - **Description**: Brief summary (single line preferred)
