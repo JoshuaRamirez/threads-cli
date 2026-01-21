@@ -4,6 +4,20 @@
   "description": "Conversational thread tracker for managing streams of activity through self-reported progress",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./models": {
+      "types": "./dist/models/index.d.ts",
+      "default": "./dist/models/index.js"
+    },
+    "./storage": {
+      "types": "./dist/storage/index.d.ts",
+      "default": "./dist/storage/index.js"
+    }
+  },
   "bin": {
     "threads": "./dist/index.js"
   },
