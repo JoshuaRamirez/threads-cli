@@ -1,0 +1,40 @@
+{
+  "name": "@joshua2048/threads-firebase-storage",
+  "version": "1.0.0",
+  "description": "Firebase Firestore storage adapter for Threads platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "threads",
+    "firebase",
+    "firestore",
+    "storage"
+  ],
+  "author": "Joshua Ramirez",
+  "license": "MIT",
+  "dependencies": {
+    "@joshua2048/threads-core": "workspace:*",
+    "@joshua2048/threads-storage": "workspace:*",
+    "firebase-admin": "^13.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "firebase-admin": ">=12.0.0"
+  }
+}

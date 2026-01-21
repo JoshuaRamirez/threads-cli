@@ -1,0 +1,27 @@
+{
+  "name": "@joshua2048/threads-firebase-functions",
+  "version": "1.0.0",
+  "description": "Firebase Cloud Functions for Threads platform",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@joshua2048/threads-core": "workspace:*",
+    "@joshua2048/threads-firebase-storage": "workspace:*",
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.3.0",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.4.0",
+    "typescript": "^5.9.3"
+  },
+  "private": true
+}

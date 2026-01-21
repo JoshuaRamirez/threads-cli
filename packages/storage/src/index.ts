@@ -2,6 +2,7 @@
 export type {
   IThreadStore,
   IFileThreadStore,
+  IAsyncThreadStore,
   ThreadFilter,
   ContainerFilter,
   BackupInfo,

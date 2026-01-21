@@ -158,3 +158,47 @@ export interface IFileThreadStore extends IThreadStore {
   /** Get the path to the backup file. */
   getBackupFilePath(): string;
 }
+
+/**
+ * Async storage interface for network-based backends (Firestore, REST APIs, etc.)
+ *
+ * Same operations as IThreadStore but with Promise-based returns.
+ */
+export interface IAsyncThreadStore {
+  // === Thread Operations ===
+
+  getAllThreads(): Promise<Thread[]>;
+  getThreadById(id: string): Promise<Thread | undefined>;
+  getThreadByName(name: string): Promise<Thread | undefined>;
+  findThreads(filter: ThreadFilter): Promise<Thread[]>;
+  addThread(thread: Thread): Promise<Thread>;
+  updateThread(id: string, updates: Partial<Thread>): Promise<boolean>;
+  deleteThread(id: string): Promise<boolean>;
+
+  // === Container Operations ===
+
+  getAllContainers(): Promise<Container[]>;
+  getContainerById(id: string): Promise<Container | undefined>;
+  getContainerByName(name: string): Promise<Container | undefined>;
+  findContainers(filter: ContainerFilter): Promise<Container[]>;
+  addContainer(container: Container): Promise<Container>;
+  updateContainer(id: string, updates: Partial<Container>): Promise<boolean>;
+  deleteContainer(id: string): Promise<boolean>;
+
+  // === Group Operations ===
+
+  getAllGroups(): Promise<Group[]>;
+  getGroupById(id: string): Promise<Group | undefined>;
+  getGroupByName(name: string): Promise<Group | undefined>;
+  addGroup(group: Group): Promise<Group>;
+  updateGroup(id: string, updates: Partial<Group>): Promise<boolean>;
+  deleteGroup(id: string): Promise<boolean>;
+
+  // === Entity Operations ===
+
+  getEntityById(id: string): Promise<Entity | undefined>;
+  getEntityByName(name: string): Promise<Entity | undefined>;
+  getAllEntities(): Promise<Entity[]>;
+  isContainer(entity: Entity): entity is Container;
+  isThread(entity: Entity): entity is Thread;
+}
