@@ -1,0 +1,42 @@
+{
+  "name": "@joshua2048/threads-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Threads platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "threads-mcp": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "threads",
+    "mcp",
+    "model-context-protocol"
+  ],
+  "author": "Joshua Ramirez",
+  "license": "MIT",
+  "dependencies": {
+    "@joshua2048/threads-core": "workspace:*",
+    "@joshua2048/threads-storage": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "uuid": "^13.0.0",
+    "zod": "^3.25.28"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

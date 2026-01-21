@@ -4,6 +4,7 @@
     { "path": "packages/core" },
     { "path": "packages/storage" },
     { "path": "packages/firebase-storage" },
+    { "path": "packages/mcp-server" },
     { "path": "packages/cli" }
   ]
 }
