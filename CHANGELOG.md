@@ -7,12 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **`--parent` option for `new` command** - create sub-threads directly without using `spawn`
-
 ## [1.1.0] - 2025-01-17
 
 ### Added
+- **`--parent` option for `new` command** - create sub-threads directly without using `spawn`
 - **Comprehensive test coverage** - unit tests for 18 command modules (19% → 71% statements)
 - **Per-module documentation** - CLAUDE.md files for commands, config, models, storage, utils, tests
 - **Container entity type** - organizational nodes without momentum semantics
@@ -90,9 +88,10 @@ Initial npm package release.
 - JSON storage in `~/.threads/threads.json`
 - Commands: new, list, show, set, progress, spawn, group, groups, delete
 
-[Unreleased]: https://github.com/joshua2048/threads-cli/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/joshua2048/threads-cli/compare/v0.9.0...v1.0.0
-[0.9.0]: https://github.com/joshua2048/threads-cli/compare/v0.8.0...v0.9.0
-[0.8.0]: https://github.com/joshua2048/threads-cli/compare/v0.7.0...v0.8.0
-[0.7.0]: https://github.com/joshua2048/threads-cli/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/joshua2048/threads-cli/releases/tag/v0.6.0
+[Unreleased]: https://github.com/JoshuaRamirez/threads-cli/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/JoshuaRamirez/threads-cli/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/JoshuaRamirez/threads-cli/compare/v0.9.0...v1.0.0
+[0.9.0]: https://github.com/JoshuaRamirez/threads-cli/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/JoshuaRamirez/threads-cli/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/JoshuaRamirez/threads-cli/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/JoshuaRamirez/threads-cli/releases/tag/v0.6.0
