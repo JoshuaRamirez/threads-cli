@@ -1,0 +1,433 @@
+openapi: 3.1.0
+info:
+  title: Threads API
+  description: |
+    API for tracking activity streams via self-reported progress.
+
+    Core concepts:
+    - **Thread**: A stream of activity with status, temperature (momentum), size (scope), and importance
+    - **Progress**: Timestamped notes you report to yourself about a thread
+    - **Temperature**: How actively you're working on something (hot = active focus, frozen = dormant)
+    - **Status**: Lifecycle state (active, paused, stopped, completed, archived)
+  version: 1.0.0
+  contact:
+    name: Threads Support
+    url: https://github.com/joshua2048/threads
+
+servers:
+  - url: https://{region}-{project}.cloudfunctions.net/threads
+    description: Firebase Cloud Functions
+    variables:
+      region:
+        default: us-central1
+        description: Firebase region
+      project:
+        default: your-project-id
+        description: Firebase project ID
+
+security:
+  - bearerAuth: []
+
+paths:
+  /:
+    get:
+      operationId: listThreads
+      summary: List all threads
+      description: Retrieve all threads for the authenticated tenant
+      responses:
+        '200':
+          description: List of threads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  threads:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Thread'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      operationId: createThread
+      summary: Create a new thread
+      description: Create a new thread for tracking an activity stream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateThreadRequest'
+      responses:
+        '201':
+          description: Thread created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  thread:
+                    $ref: '#/components/schemas/Thread'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /{threadId}:
+    parameters:
+      - $ref: '#/components/parameters/ThreadId'
+
+    get:
+      operationId: getThread
+      summary: Get a thread by ID
+      description: Retrieve details of a specific thread including all progress entries
+      responses:
+        '200':
+          description: Thread details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  thread:
+                    $ref: '#/components/schemas/Thread'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      operationId: updateThread
+      summary: Update a thread
+      description: Update properties of an existing thread
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateThreadRequest'
+      responses:
+        '200':
+          description: Thread updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  thread:
+                    $ref: '#/components/schemas/Thread'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      operationId: deleteThread
+      summary: Delete a thread
+      description: Permanently delete a thread and all its progress entries
+      responses:
+        '200':
+          description: Thread deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{threadId}/progress:
+    parameters:
+      - $ref: '#/components/parameters/ThreadId'
+
+    post:
+      operationId: addProgress
+      summary: Add progress to a thread
+      description: Add a timestamped progress note to track activity on a thread
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddProgressRequest'
+      responses:
+        '201':
+          description: Progress added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  progress:
+                    $ref: '#/components/schemas/ProgressEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key issued to the ChatGPT GPT instance
+
+  parameters:
+    ThreadId:
+      name: threadId
+      in: path
+      required: true
+      description: Unique identifier of the thread
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Thread not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Thread:
+      type: object
+      required:
+        - type
+        - id
+        - name
+        - status
+        - temperature
+        - size
+        - importance
+        - createdAt
+        - updatedAt
+      properties:
+        type:
+          type: string
+          enum: [thread]
+          description: Entity type discriminator
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier
+        name:
+          type: string
+          description: Thread name
+          example: "Implement user authentication"
+        description:
+          type: string
+          description: Brief description of the thread
+          example: "Adding OAuth2 login flow with Google and GitHub providers"
+        status:
+          $ref: '#/components/schemas/Status'
+        temperature:
+          $ref: '#/components/schemas/Temperature'
+        size:
+          $ref: '#/components/schemas/Size'
+        importance:
+          $ref: '#/components/schemas/Importance'
+        tags:
+          type: array
+          items:
+            type: string
+          description: Categorization tags
+          example: ["backend", "security"]
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent thread ID for sub-threads
+        groupId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Group ID for organization
+        progress:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProgressEntry'
+          description: Timestamped progress notes
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    ProgressEntry:
+      type: object
+      required:
+        - id
+        - note
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique progress entry identifier
+        note:
+          type: string
+          description: Progress note content
+          example: "Completed OAuth callback handler"
+        timestamp:
+          type: string
+          format: date-time
+          description: When the progress was recorded
+
+    Status:
+      type: string
+      enum:
+        - active
+        - paused
+        - stopped
+        - completed
+        - archived
+      description: |
+        Thread lifecycle state:
+        - **active**: Currently being worked on
+        - **paused**: Temporarily on hold
+        - **stopped**: Work has stopped (may resume)
+        - **completed**: Successfully finished
+        - **archived**: No longer relevant
+
+    Temperature:
+      type: string
+      enum:
+        - hot
+        - warm
+        - tepid
+        - cold
+        - freezing
+        - frozen
+      description: |
+        Momentum indicator (how recently/actively worked on):
+        - **hot**: Active focus right now
+        - **warm**: Recently active
+        - **tepid**: Some recent activity
+        - **cold**: Not touched recently
+        - **freezing**: Going dormant
+        - **frozen**: Completely dormant
+
+    Size:
+      type: string
+      enum:
+        - tiny
+        - small
+        - medium
+        - large
+        - huge
+      description: Scope/scale of the work involved
+
+    Importance:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: Priority level (1=lowest, 5=highest)
+
+    CreateThreadRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Thread name
+        description:
+          type: string
+          description: Brief description
+        status:
+          $ref: '#/components/schemas/Status'
+        temperature:
+          $ref: '#/components/schemas/Temperature'
+        size:
+          $ref: '#/components/schemas/Size'
+        importance:
+          $ref: '#/components/schemas/Importance'
+        tags:
+          type: array
+          items:
+            type: string
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        groupId:
+          type: string
+          format: uuid
+          nullable: true
+
+    UpdateThreadRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/Status'
+        temperature:
+          $ref: '#/components/schemas/Temperature'
+        size:
+          $ref: '#/components/schemas/Size'
+        importance:
+          $ref: '#/components/schemas/Importance'
+        tags:
+          type: array
+          items:
+            type: string
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        groupId:
+          type: string
+          format: uuid
+          nullable: true
+
+    AddProgressRequest:
+      type: object
+      required:
+        - note
+      properties:
+        note:
+          type: string
+          description: Progress note content
+          example: "Finished implementing the login form validation"
+        timestamp:
+          type: string
+          format: date-time
+          description: Optional custom timestamp (defaults to now)
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Thread not found"
