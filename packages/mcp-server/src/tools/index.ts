@@ -201,7 +201,7 @@ export function registerTools(server: McpServer): void {
     {
       threadId: z.string().describe('Thread ID to add progress to'),
       note: z.string().describe('Progress note text'),
-      timestamp: z.string().optional().describe('Custom timestamp (ISO 8601, default: now)'),
+      timestamp: z.string().datetime().optional().describe('Custom timestamp (ISO 8601, default: now)'),
     } as SchemaShape,
     async (args) => {
       const thread = getThreadById(args.threadId);
@@ -502,8 +502,14 @@ export function registerTools(server: McpServer): void {
       parentId: z.string().nullable().describe('New parent ID (null to make root)'),
     } as SchemaShape,
     async (args) => {
-      // Cycle detection: walk the proposed parent's ancestor chain
+      // Validate parentId exists if provided
       if (args.parentId) {
+        const parent = getThreadById(args.parentId) ?? getContainerById(args.parentId);
+        if (!parent) {
+          return { content: [{ type: 'text' as const, text: `Parent not found: ${args.parentId}` }], isError: true };
+        }
+
+        // Cycle detection: walk the proposed parent's ancestor chain
         const visited = new Set<string>([args.entityId]);
         let checkId: string | null = args.parentId;
         while (checkId) {

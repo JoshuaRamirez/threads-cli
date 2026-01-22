@@ -453,13 +453,37 @@ export const threads = functions.https.onRequest(async (req, res) => {
         updatePayload.tags = sanitizedTags;
       }
 
-      const success = await store.updateThread(threadId, updatePayload);
-      if (!success) {
-        res.status(404).json({ error: 'Thread not found' });
-        return;
+      // Use Firestore transaction to atomically update and return
+      const db = admin.firestore();
+      const threadRef = db.collection(`tenants/${tenantId}/threads`).doc(threadId);
+
+      try {
+        const updatedThread = await db.runTransaction(async (transaction) => {
+          const threadDoc = await transaction.get(threadRef);
+          if (!threadDoc.exists) {
+            throw new Error('Thread not found');
+          }
+
+          const currentData = threadDoc.data() as Thread;
+          const newData = {
+            ...currentData,
+            ...updatePayload,
+            updatedAt: new Date().toISOString(),
+          };
+
+          transaction.set(threadRef, newData);
+          return newData;
+        });
+
+        res.json({ thread: updatedThread });
+      } catch (error) {
+        if (error instanceof Error && error.message === 'Thread not found') {
+          res.status(404).json({ error: 'Thread not found' });
+        } else {
+          console.error('Transaction failed:', error);
+          res.status(500).json({ error: 'Failed to update thread' });
+        }
       }
-      const thread = await store.getThreadById(threadId);
-      res.json({ thread });
       return;
     }
 
