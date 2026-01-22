@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, getContainerById, getContainerByName, getAllContainers, isContainer } from 'threads-storage';
+import { getThreadById, getThreadByName, getAllThreads, getContainerById, getContainerByName, getAllContainers, isContainer } from '@redjay/threads-storage';
 import { formatThreadDetail, formatContainerDetail } from '../utils';
-import { Entity, Thread, Container } from 'threads-types';
+import { Entity, Thread, Container } from '@redjay/threads-core';
 import chalk from 'chalk';
 
 function findEntity(identifier: string): Entity | undefined {

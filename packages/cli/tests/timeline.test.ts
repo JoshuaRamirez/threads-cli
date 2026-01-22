@@ -1,4 +1,4 @@
-import { Thread, ProgressEntry } from 'threads-types';
+import { Thread, ProgressEntry } from '@redjay/threads-core';
 import {
   parseDate,
   truncate,

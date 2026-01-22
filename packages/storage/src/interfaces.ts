@@ -11,7 +11,7 @@ import {
   Group,
   Entity,
   ThreadsData,
-} from 'threads-types';
+} from '@redjay/threads-core';
 
 /**
  * Filter criteria for finding threads.

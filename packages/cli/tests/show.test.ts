@@ -2,10 +2,10 @@
  * Unit tests for commands/show.ts
  */
 
-import { Thread, Container } from 'threads-types';
+import { Thread, Container } from '@redjay/threads-core';
 
 // Mock storage module
-jest.mock('threads-storage', () => ({
+jest.mock('@redjay/threads-storage', () => ({
   getThreadById: jest.fn(),
   getThreadByName: jest.fn(),
   getAllThreads: jest.fn(),
@@ -37,7 +37,7 @@ import {
   getContainerByName,
   getAllContainers,
   isContainer,
-} from 'threads-storage';
+} from '@redjay/threads-storage';
 import { formatThreadDetail, formatContainerDetail } from '../src/utils';
 import { showCommand } from '../src/commands/show';
 

@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getAllThreads, getAllGroups, getGroupById } from 'threads-storage';
-import { Thread, Group, Temperature } from 'threads-types';
+import { getAllThreads, getAllGroups, getGroupById } from '@redjay/threads-storage';
+import { Thread, Group, Temperature } from '@redjay/threads-core';
 import chalk from 'chalk';
 
 // Calculate days since a given ISO date string

@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from 'threads-storage';
-import { Dependency } from 'threads-types';
+import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@redjay/threads-storage';
+import { Dependency } from '@redjay/threads-core';
 import chalk from 'chalk';
 
 function findThread(identifier: string) {

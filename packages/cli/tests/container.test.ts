@@ -2,7 +2,7 @@
  * Unit tests for commands/container.ts
  */
 
-import { Container, Thread, Group, Entity } from 'threads-types';
+import { Container, Thread, Group, Entity } from '@redjay/threads-core';
 
 // Mock uuid
 jest.mock('uuid', () => ({
@@ -18,7 +18,7 @@ jest.mock('readline', () => ({
 }));
 
 // Mock storage module
-jest.mock('threads-storage', () => ({
+jest.mock('@redjay/threads-storage', () => ({
   getAllContainers: jest.fn(),
   getContainerById: jest.fn(),
   getContainerByName: jest.fn(),
@@ -63,7 +63,7 @@ import {
   getAllThreads,
   getAllEntities,
   updateThread,
-} from 'threads-storage';
+} from '@redjay/threads-storage';
 import { containerCommand } from '../src/commands/container';
 
 const mockGetAllContainers = getAllContainers as jest.MockedFunction<typeof getAllContainers>;

@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from 'threads-storage';
+import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@redjay/threads-storage';
 import chalk from 'chalk';
 
 function parseDateTime(input: string): Date | null {

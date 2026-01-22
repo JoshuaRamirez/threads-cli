@@ -13,8 +13,8 @@ import {
   updateThread,
   getAllContainers,
   updateContainer
-} from 'threads-storage';
-import { Group } from 'threads-types';
+} from '@redjay/threads-storage';
+import { Group } from '@redjay/threads-core';
 import chalk from 'chalk';
 
 function findThread(identifier: string) {

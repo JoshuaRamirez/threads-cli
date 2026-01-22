@@ -2,7 +2,7 @@
  * Unit tests for commands/group.ts
  */
 
-import { Thread, Group, Container } from 'threads-types';
+import { Thread, Group, Container } from '@redjay/threads-core';
 
 // Mock uuid
 jest.mock('uuid', () => ({
@@ -10,7 +10,7 @@ jest.mock('uuid', () => ({
 }));
 
 // Mock storage module
-jest.mock('threads-storage', () => ({
+jest.mock('@redjay/threads-storage', () => ({
   getAllGroups: jest.fn(),
   getGroupById: jest.fn(),
   getGroupByName: jest.fn(),
@@ -47,7 +47,7 @@ import {
   updateThread,
   getAllContainers,
   updateContainer,
-} from 'threads-storage';
+} from '@redjay/threads-storage';
 import { groupCommand } from '../src/commands/group';
 
 const mockGetAllGroups = getAllGroups as jest.MockedFunction<typeof getAllGroups>;

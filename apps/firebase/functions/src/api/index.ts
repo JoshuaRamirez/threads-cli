@@ -6,8 +6,8 @@
 
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-import { FirestoreStore } from 'threads-firebase-storage';
-import { Thread, Importance } from 'threads-types';
+import { FirestoreStore } from '@redjay/threads-firebase-storage';
+import { Thread, Importance } from '@redjay/threads-core';
 import { v4 as uuidv4 } from 'uuid';
 
 // Validation constants

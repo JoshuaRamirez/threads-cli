@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from 'threads-storage';
-import { ProgressEntry } from 'threads-types';
+import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@redjay/threads-storage';
+import { ProgressEntry } from '@redjay/threads-core';
 import chalk from 'chalk';
 
 function parseDateTime(input: string): Date | null {

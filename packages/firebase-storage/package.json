@@ -1,5 +1,5 @@
 {
-  "name": "threads-firebase-storage",
+  "name": "@redjay/threads-firebase-storage",
   "version": "1.0.0",
   "description": "Firebase Firestore storage adapter for Threads platform",
   "main": "dist/index.js",
@@ -27,8 +27,8 @@
   "author": "Joshua Ramirez",
   "license": "MIT",
   "dependencies": {
-    "threads-types": "workspace:*",
-    "threads-storage": "workspace:*",
+    "@redjay/threads-core": "workspace:*",
+    "@redjay/threads-storage": "workspace:*",
     "firebase-admin": "^13.0.0"
   },
   "devDependencies": {

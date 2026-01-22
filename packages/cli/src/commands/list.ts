@@ -1,6 +1,6 @@
 import { Command, Option } from 'commander';
-import { getAllThreads, getAllGroups, getGroupById, getAllContainers, getAllEntities, getEntityById } from 'threads-storage';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Entity, Container } from 'threads-types';
+import { getAllThreads, getAllGroups, getGroupById, getAllContainers, getAllEntities, getEntityById } from '@redjay/threads-storage';
+import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Entity, Container } from '@redjay/threads-core';
 import { formatThreadSummary, buildTree, renderTree } from '../utils';
 import chalk from 'chalk';
 

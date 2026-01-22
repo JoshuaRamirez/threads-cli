@@ -8,8 +8,8 @@
  */
 
 import { Firestore, CollectionReference, DocumentData } from 'firebase-admin/firestore';
-import { Thread, Container, Group, Entity } from 'threads-types';
-import { IAsyncThreadStore, ThreadFilter, ContainerFilter } from 'threads-storage';
+import { Thread, Container, Group, Entity } from '@redjay/threads-core';
+import { IAsyncThreadStore, ThreadFilter, ContainerFilter } from '@redjay/threads-storage';
 
 export interface FirestoreStoreOptions {
   /** Firestore instance (from firebase-admin) */

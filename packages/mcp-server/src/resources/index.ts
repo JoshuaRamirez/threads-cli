@@ -12,7 +12,7 @@ import {
   getThreadById,
   getContainerById,
   getGroupById,
-} from 'threads-storage';
+} from '@redjay/threads-storage';
 
 export function registerResources(server: McpServer): void {
   // Resource templates for dynamic access

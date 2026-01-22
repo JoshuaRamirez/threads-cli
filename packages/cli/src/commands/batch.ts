@@ -8,8 +8,8 @@ import {
   getGroupById,
   getGroupByName,
   updateThread
-} from 'threads-storage';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, ProgressEntry } from 'threads-types';
+} from '@redjay/threads-storage';
+import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, ProgressEntry } from '@redjay/threads-core';
 import chalk from 'chalk';
 
 // Valid values for validation

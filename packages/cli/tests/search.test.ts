@@ -1,4 +1,4 @@
-import { Thread } from 'threads-types';
+import { Thread } from '@redjay/threads-core';
 import { findMatches, searchThread, MatchContext, SearchScope } from '../src/commands/search';
 
 // Factory for creating mock threads with controlled data

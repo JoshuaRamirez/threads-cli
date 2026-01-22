@@ -2,7 +2,7 @@
  * Unit tests for commands/spawn.ts
  */
 
-import { Thread } from 'threads-types';
+import { Thread } from '@redjay/threads-core';
 
 // Mock uuid
 jest.mock('uuid', () => ({
@@ -10,7 +10,7 @@ jest.mock('uuid', () => ({
 }));
 
 // Mock storage module
-jest.mock('threads-storage', () => ({
+jest.mock('@redjay/threads-storage', () => ({
   getThreadById: jest.fn(),
   getThreadByName: jest.fn(),
   getAllThreads: jest.fn(),
@@ -33,7 +33,7 @@ import {
   getThreadByName,
   getAllThreads,
   addThread,
-} from 'threads-storage';
+} from '@redjay/threads-storage';
 import { spawnCommand } from '../src/commands/spawn';
 
 const mockGetThreadById = getThreadById as jest.MockedFunction<typeof getThreadById>;

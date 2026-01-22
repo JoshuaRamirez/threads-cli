@@ -1,5 +1,5 @@
 {
-  "name": "threads-cli",
+  "name": "@redjay/threads-cli",
   "version": "1.1.0",
   "description": "Conversational thread tracker for managing streams of activity through self-reported progress",
   "main": "dist/index.js",
@@ -48,8 +48,8 @@
   },
   "homepage": "https://github.com/joshuaramirez/threads-cli#readme",
   "dependencies": {
-    "threads-types": "workspace:*",
-    "threads-storage": "workspace:*",
+    "@redjay/threads-core": "workspace:*",
+    "@redjay/threads-storage": "workspace:*",
     "chalk": "^4.1.2",
     "commander": "^14.0.2",
     "uuid": "^13.0.0"

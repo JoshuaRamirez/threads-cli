@@ -26,8 +26,8 @@ import {
   deleteGroup,
   getEntityById,
   getEntityByName,
-} from 'threads-storage';
-import { Thread, Container, Group, ProgressEntry } from 'threads-types';
+} from '@redjay/threads-storage';
+import { Thread, Container, Group, ProgressEntry } from '@redjay/threads-core';
 
 // Reusable schema fragments - defined once to avoid type inference depth issues
 const statusEnum = ['active', 'paused', 'stopped', 'completed', 'archived'] as const;

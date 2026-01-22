@@ -5,7 +5,7 @@ import {
   getBackupInfo,
   restoreFromBackup,
   getBackupFilePath
-} from 'threads-storage';
+} from '@redjay/threads-storage';
 import chalk from 'chalk';
 
 export const undoCommand = new Command('undo')

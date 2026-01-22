@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from 'threads-storage';
-import { Thread, DetailsEntry } from 'threads-types';
+import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@redjay/threads-storage';
+import { Thread, DetailsEntry } from '@redjay/threads-core';
 import chalk from 'chalk';
 
 // Helper to find a thread by identifier (ID, name, or partial match)

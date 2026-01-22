@@ -59,7 +59,7 @@ threads/
 ├── tsconfig.base.json            # Shared TypeScript config
 │
 ├── packages/
-│   ├── core/                     # threads-types
+│   ├── core/                     # @redjay/threads-core
 │   │   ├── package.json
 │   │   └── src/
 │   │       ├── models/           # Thread, Container, Group, types

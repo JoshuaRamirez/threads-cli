@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getAllThreads } from 'threads-storage';
-import { Thread } from 'threads-types';
+import { getAllThreads } from '@redjay/threads-storage';
+import { Thread } from '@redjay/threads-core';
 import chalk from 'chalk';
 
 export type SearchScope = 'name' | 'progress' | 'details' | 'tags' | 'all';

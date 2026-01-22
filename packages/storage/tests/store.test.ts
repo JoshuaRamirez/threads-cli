@@ -10,7 +10,7 @@
 
 import * as path from 'path';
 import * as os from 'os';
-import { ThreadsData } from 'threads-types';
+import { ThreadsData } from '@redjay/threads-core';
 
 // Calculate expected paths (matching store.ts logic)
 const DATA_DIR = path.join(os.homedir(), '.threads');

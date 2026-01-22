@@ -2,10 +2,10 @@
  * Unit tests for commands/overview.ts
  */
 
-import { Thread, Group } from 'threads-types';
+import { Thread, Group } from '@redjay/threads-core';
 
 // Mock storage module
-jest.mock('threads-storage', () => ({
+jest.mock('@redjay/threads-storage', () => ({
   getAllThreads: jest.fn(),
   getAllGroups: jest.fn(),
   getGroupById: jest.fn(),
@@ -20,7 +20,7 @@ jest.mock('chalk', () => ({
   bold: jest.fn((s: string) => s),
 }));
 
-import { getAllThreads, getAllGroups } from 'threads-storage';
+import { getAllThreads, getAllGroups } from '@redjay/threads-storage';
 import { overviewCommand } from '../src/commands/overview';
 
 const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;

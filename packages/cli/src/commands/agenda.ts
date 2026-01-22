@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getAllThreads } from 'threads-storage';
-import { Thread, Temperature } from 'threads-types';
+import { getAllThreads } from '@redjay/threads-storage';
+import { Thread, Temperature } from '@redjay/threads-core';
 import { formatTemperature, formatImportanceStars } from '../utils';
 import chalk from 'chalk';
 

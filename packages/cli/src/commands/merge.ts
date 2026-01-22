@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { loadData, saveData, getThreadById, getThreadByName, getAllThreads } from 'threads-storage';
-import { Thread, ProgressEntry, DetailsEntry, Dependency } from 'threads-types';
+import { loadData, saveData, getThreadById, getThreadByName, getAllThreads } from '@redjay/threads-storage';
+import { Thread, ProgressEntry, DetailsEntry, Dependency } from '@redjay/threads-core';
 import chalk from 'chalk';
 
 /**

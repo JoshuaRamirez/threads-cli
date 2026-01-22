@@ -8,8 +8,8 @@ import {
   getGroupByName,
   loadData,
   saveData
-} from 'threads-storage';
-import { Thread } from 'threads-types';
+} from '@redjay/threads-storage';
+import { Thread } from '@redjay/threads-core';
 import { formatThreadSummary } from '../utils';
 import chalk from 'chalk';
 

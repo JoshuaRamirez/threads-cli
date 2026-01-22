@@ -13,8 +13,8 @@ import {
   getAllEntities,
   updateThread,
   deleteThread
-} from 'threads-storage';
-import { Container, Entity, Thread } from 'threads-types';
+} from '@redjay/threads-storage';
+import { Container, Entity, Thread } from '@redjay/threads-core';
 import { formatContainerDetail } from '../utils';
 import chalk from 'chalk';
 import * as readline from 'readline';

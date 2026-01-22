@@ -1,7 +1,7 @@
 import { Command, Option } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { addThread, getThreadByName, getGroupByName, getGroupById, getThreadById, getAllThreads, getContainerById, getAllContainers } from 'threads-storage';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Entity } from 'threads-types';
+import { addThread, getThreadByName, getGroupByName, getGroupById, getThreadById, getAllThreads, getContainerById, getAllContainers } from '@redjay/threads-storage';
+import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Entity } from '@redjay/threads-core';
 import { formatThreadSummary } from '../utils';
 import chalk from 'chalk';
 

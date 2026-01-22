@@ -1,5 +1,5 @@
 {
-  "name": "threads-mcp",
+  "name": "@redjay/threads-mcp",
   "version": "1.0.0",
   "description": "MCP server for Threads platform",
   "main": "dist/index.js",
@@ -30,8 +30,8 @@
   "author": "Joshua Ramirez",
   "license": "MIT",
   "dependencies": {
-    "threads-types": "workspace:*",
-    "threads-storage": "workspace:*",
+    "@redjay/threads-core": "workspace:*",
+    "@redjay/threads-storage": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "uuid": "^13.0.0",
     "zod": "^3.25.28"

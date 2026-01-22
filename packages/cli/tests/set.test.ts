@@ -2,10 +2,10 @@
  * Unit tests for commands/set.ts
  */
 
-import { Thread, Entity } from 'threads-types';
+import { Thread, Entity } from '@redjay/threads-core';
 
 // Mock storage module
-jest.mock('threads-storage', () => ({
+jest.mock('@redjay/threads-storage', () => ({
   getThreadById: jest.fn(),
   getThreadByName: jest.fn(),
   getAllThreads: jest.fn(),
@@ -34,7 +34,7 @@ import {
   getAllThreads,
   updateThread,
   getAllEntities,
-} from 'threads-storage';
+} from '@redjay/threads-storage';
 import { setCommand } from '../src/commands/set';
 
 const mockGetThreadById = getThreadById as jest.MockedFunction<typeof getThreadById>;

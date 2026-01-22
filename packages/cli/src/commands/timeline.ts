@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getAllThreads, getThreadById, getThreadByName } from 'threads-storage';
-import { Thread, ProgressEntry } from 'threads-types';
+import { getAllThreads, getThreadById, getThreadByName } from '@redjay/threads-storage';
+import { Thread, ProgressEntry } from '@redjay/threads-core';
 import chalk from 'chalk';
 
 export interface TimelineEntry {
