@@ -489,22 +489,43 @@ export const threads = functions.https.onRequest(async (req, res) => {
         return;
       }
 
-      const thread = await store.getThreadById(threadId);
-      if (!thread) {
-        res.status(404).json({ error: 'Thread not found' });
-        return;
-      }
-
       const progressEntry = {
         id: uuidv4(),
         note: body.note.trim(),
         timestamp: body.timestamp ?? new Date().toISOString(),
       };
 
-      const progress = [...(thread.progress ?? []), progressEntry];
-      await store.updateThread(threadId, { progress });
+      // Use Firestore transaction to safely append progress
+      const db = admin.firestore();
+      const threadRef = db.collection(`tenants/${tenantId}/threads`).doc(threadId);
 
-      res.status(201).json({ progress: progressEntry });
+      try {
+        await db.runTransaction(async (transaction) => {
+          const threadDoc = await transaction.get(threadRef);
+          if (!threadDoc.exists) {
+            throw new Error('Thread not found');
+          }
+
+          const threadData = threadDoc.data() as Thread;
+          // Ensure progress is an array before spreading
+          const existingProgress = Array.isArray(threadData.progress) ? threadData.progress : [];
+          const updatedProgress = [...existingProgress, progressEntry];
+
+          transaction.update(threadRef, {
+            progress: updatedProgress,
+            updatedAt: new Date().toISOString(),
+          });
+        });
+
+        res.status(201).json({ progress: progressEntry });
+      } catch (error) {
+        if (error instanceof Error && error.message === 'Thread not found') {
+          res.status(404).json({ error: 'Thread not found' });
+        } else {
+          console.error('Transaction failed:', error);
+          res.status(500).json({ error: 'Failed to add progress' });
+        }
+      }
       return;
     }
 

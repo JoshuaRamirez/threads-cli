@@ -56,6 +56,22 @@ export function registerTools(server: McpServer): void {
       groupId: z.string().optional().describe('Group ID to assign to'),
     } as SchemaShape,
     async (args) => {
+      // Validate parentId exists if provided
+      if (args.parentId) {
+        const parent = getThreadById(args.parentId) ?? getContainerById(args.parentId);
+        if (!parent) {
+          return { content: [{ type: 'text' as const, text: `Parent not found: ${args.parentId}` }], isError: true };
+        }
+      }
+
+      // Validate groupId exists if provided
+      if (args.groupId) {
+        const group = getGroupById(args.groupId);
+        if (!group) {
+          return { content: [{ type: 'text' as const, text: `Group not found: ${args.groupId}` }], isError: true };
+        }
+      }
+
       const now = new Date().toISOString();
       const thread: Thread = {
         type: 'thread',
@@ -300,6 +316,22 @@ export function registerTools(server: McpServer): void {
       tags: z.array(z.string()).optional().describe('Tags for categorization'),
     } as SchemaShape,
     async (args) => {
+      // Validate parentId exists if provided
+      if (args.parentId) {
+        const parent = getThreadById(args.parentId) ?? getContainerById(args.parentId);
+        if (!parent) {
+          return { content: [{ type: 'text' as const, text: `Parent not found: ${args.parentId}` }], isError: true };
+        }
+      }
+
+      // Validate groupId exists if provided
+      if (args.groupId) {
+        const group = getGroupById(args.groupId);
+        if (!group) {
+          return { content: [{ type: 'text' as const, text: `Group not found: ${args.groupId}` }], isError: true };
+        }
+      }
+
       const now = new Date().toISOString();
       const container: Container = {
         type: 'container',
@@ -421,19 +453,40 @@ export function registerTools(server: McpServer): void {
       id: z.string().describe('Group ID'),
     } as SchemaShape,
     async (args) => {
+      // Verify group exists first
+      const group = getGroupById(args.id);
+      if (!group) {
+        return { content: [{ type: 'text' as const, text: `Group not found: ${args.id}` }], isError: true };
+      }
+
       // Clear groupId from all members before deleting the group
       const memberThreads = getAllThreads().filter(t => t.groupId === args.id);
       const memberContainers = getAllContainers().filter(c => c.groupId === args.id);
+      const cleanupFailures: string[] = [];
+
       for (const t of memberThreads) {
-        updateThread(t.id, { groupId: null });
+        const success = updateThread(t.id, { groupId: null });
+        if (!success) {
+          cleanupFailures.push(`thread:${t.id}`);
+        }
       }
       for (const c of memberContainers) {
-        updateContainer(c.id, { groupId: null });
+        const success = updateContainer(c.id, { groupId: null });
+        if (!success) {
+          cleanupFailures.push(`container:${c.id}`);
+        }
+      }
+
+      if (cleanupFailures.length > 0) {
+        return {
+          content: [{ type: 'text' as const, text: `Failed to unlink some members: ${cleanupFailures.join(', ')}. Group not deleted.` }],
+          isError: true
+        };
       }
 
       const success = deleteGroup(args.id);
       if (!success) {
-        return { content: [{ type: 'text' as const, text: `Group not found: ${args.id}` }], isError: true };
+        return { content: [{ type: 'text' as const, text: `Failed to delete group: ${args.id}` }], isError: true };
       }
       return { content: [{ type: 'text' as const, text: `Deleted group: ${args.id}` }] };
     }
@@ -493,6 +546,14 @@ export function registerTools(server: McpServer): void {
       groupId: z.string().nullable().describe('Group ID (null to remove from group)'),
     } as SchemaShape,
     async (args) => {
+      // Validate groupId exists if provided (non-null)
+      if (args.groupId) {
+        const group = getGroupById(args.groupId);
+        if (!group) {
+          return { content: [{ type: 'text' as const, text: `Group not found: ${args.groupId}` }], isError: true };
+        }
+      }
+
       const thread = getThreadById(args.entityId);
       if (thread) {
         const success = updateThread(args.entityId, { groupId: args.groupId });

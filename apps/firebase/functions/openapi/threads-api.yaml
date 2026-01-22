@@ -29,7 +29,7 @@ security:
   - bearerAuth: []
 
 paths:
-  /threads:
+  /:
     get:
       operationId: listThreads
       summary: List all threads
@@ -74,7 +74,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /threads/{threadId}:
+  /{threadId}:
     parameters:
       - $ref: '#/components/parameters/ThreadId'
 
@@ -142,7 +142,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /threads/{threadId}/progress:
+  /{threadId}/progress:
     parameters:
       - $ref: '#/components/parameters/ThreadId'
 
