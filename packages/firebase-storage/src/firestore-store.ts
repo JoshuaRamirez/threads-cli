@@ -28,6 +28,14 @@ export class FirestoreStore implements IAsyncThreadStore {
   private readonly tenantId: string;
 
   constructor(options: FirestoreStoreOptions) {
+    // Validate tenant ID to prevent invalid collection paths
+    if (!options.tenantId || typeof options.tenantId !== 'string') {
+      throw new Error('tenantId is required');
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(options.tenantId)) {
+      throw new Error('tenantId contains invalid characters');
+    }
+
     this.db = options.firestore;
     this.tenantId = options.tenantId;
   }

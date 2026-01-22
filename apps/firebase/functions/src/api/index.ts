@@ -53,7 +53,7 @@ function validateEnums(data: Partial<CreateThreadRequest | UpdateThreadRequest>)
 
   if (data.importance !== undefined) {
     const imp = data.importance;
-    if (!Number.isInteger(imp) || imp < 1 || imp > 5) {
+    if (typeof imp !== 'number' || !Number.isInteger(imp) || imp < 1 || imp > 5) {
       errors.push({
         field: 'importance',
         message: 'Invalid importance. Must be an integer between 1 and 5',
@@ -71,7 +71,12 @@ function validateStrings(data: Partial<CreateThreadRequest | UpdateThreadRequest
   const errors: ValidationError[] = [];
 
   if (requireName) {
-    if (!data.name?.trim()) {
+    if (typeof data.name !== 'string') {
+      errors.push({
+        field: 'name',
+        message: 'Name is required and must be a string',
+      });
+    } else if (!data.name.trim()) {
       errors.push({
         field: 'name',
         message: 'Name is required and cannot be empty',
@@ -83,7 +88,12 @@ function validateStrings(data: Partial<CreateThreadRequest | UpdateThreadRequest
       });
     }
   } else if (data.name !== undefined) {
-    if (!data.name?.trim()) {
+    if (typeof data.name !== 'string') {
+      errors.push({
+        field: 'name',
+        message: 'Name must be a string',
+      });
+    } else if (!data.name.trim()) {
       errors.push({
         field: 'name',
         message: 'Name cannot be empty',
@@ -96,11 +106,18 @@ function validateStrings(data: Partial<CreateThreadRequest | UpdateThreadRequest
     }
   }
 
-  if (data.description !== undefined && data.description.length > MAX_DESCRIPTION_LENGTH) {
-    errors.push({
-      field: 'description',
-      message: `Description exceeds maximum length of ${MAX_DESCRIPTION_LENGTH} characters`,
-    });
+  if (data.description !== undefined) {
+    if (typeof data.description !== 'string') {
+      errors.push({
+        field: 'description',
+        message: 'Description must be a string',
+      });
+    } else if (data.description.length > MAX_DESCRIPTION_LENGTH) {
+      errors.push({
+        field: 'description',
+        message: `Description exceeds maximum length of ${MAX_DESCRIPTION_LENGTH} characters`,
+      });
+    }
   }
 
   return errors;
@@ -137,6 +154,25 @@ function validateTags(tags: unknown): { sanitized: string[]; errors: ValidationE
   }
 
   return { sanitized: stringTags, errors };
+}
+
+/**
+ * Validate timestamp format (ISO 8601).
+ */
+function validateTimestamp(timestamp: unknown): ValidationError[] {
+  const errors: ValidationError[] = [];
+  if (timestamp === undefined) return errors;
+
+  if (typeof timestamp !== 'string') {
+    errors.push({ field: 'timestamp', message: 'Timestamp must be an ISO 8601 string' });
+    return errors;
+  }
+
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) {
+    errors.push({ field: 'timestamp', message: 'Invalid timestamp format' });
+  }
+  return errors;
 }
 
 /**
@@ -347,6 +383,11 @@ export const threads = functions.https.onRequest(async (req, res) => {
 
     // Routes with thread ID
     const threadId = pathParts[0];
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (threadId && !uuidRegex.test(threadId)) {
+      res.status(400).json({ error: 'Invalid thread ID format' });
+      return;
+    }
 
     // GET /threads/:id - Get thread
     if (req.method === 'GET' && pathParts.length === 1) {
@@ -407,10 +448,12 @@ export const threads = functions.https.onRequest(async (req, res) => {
       const body = req.body as AddProgressRequest;
 
       const noteErrors = validateProgressNote(body.note);
-      if (noteErrors.length > 0) {
+      const timestampErrors = validateTimestamp(body.timestamp);
+      const allErrors = [...noteErrors, ...timestampErrors];
+      if (allErrors.length > 0) {
         res.status(400).json({
           error: 'Validation failed',
-          details: noteErrors,
+          details: allErrors,
         });
         return;
       }

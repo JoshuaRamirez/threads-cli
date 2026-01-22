@@ -221,6 +221,10 @@ components:
         - temperature
         - size
         - importance
+        - tags
+        - dependencies
+        - progress
+        - details
         - createdAt
         - updatedAt
       properties:

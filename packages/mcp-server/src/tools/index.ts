@@ -147,6 +147,15 @@ export function registerTools(server: McpServer): void {
       id: z.string().describe('Thread ID to delete'),
     } as SchemaShape,
     async (args) => {
+      // Check for child threads before deleting
+      const children = getAllThreads().filter(t => t.parentId === args.id);
+      if (children.length > 0) {
+        return {
+          content: [{ type: 'text' as const, text: `Cannot delete thread: has ${children.length} child thread(s). Delete or move them first.` }],
+          isError: true
+        };
+      }
+
       const success = deleteThread(args.id);
       if (!success) {
         return { content: [{ type: 'text' as const, text: `Thread not found: ${args.id}` }], isError: true };
@@ -340,6 +349,17 @@ export function registerTools(server: McpServer): void {
       id: z.string().describe('Container ID'),
     } as SchemaShape,
     async (args) => {
+      // Check for child threads and containers before deleting
+      const childThreads = getAllThreads().filter(t => t.parentId === args.id);
+      const childContainers = getAllContainers().filter(c => c.parentId === args.id);
+      const totalChildren = childThreads.length + childContainers.length;
+      if (totalChildren > 0) {
+        return {
+          content: [{ type: 'text' as const, text: `Cannot delete container: has ${totalChildren} child item(s). Delete or move them first.` }],
+          isError: true
+        };
+      }
+
       const success = deleteContainer(args.id);
       if (!success) {
         return { content: [{ type: 'text' as const, text: `Container not found: ${args.id}` }], isError: true };
@@ -401,6 +421,16 @@ export function registerTools(server: McpServer): void {
       id: z.string().describe('Group ID'),
     } as SchemaShape,
     async (args) => {
+      // Clear groupId from all members before deleting the group
+      const memberThreads = getAllThreads().filter(t => t.groupId === args.id);
+      const memberContainers = getAllContainers().filter(c => c.groupId === args.id);
+      for (const t of memberThreads) {
+        updateThread(t.id, { groupId: null });
+      }
+      for (const c of memberContainers) {
+        updateContainer(c.id, { groupId: null });
+      }
+
       const success = deleteGroup(args.id);
       if (!success) {
         return { content: [{ type: 'text' as const, text: `Group not found: ${args.id}` }], isError: true };
@@ -419,6 +449,20 @@ export function registerTools(server: McpServer): void {
       parentId: z.string().nullable().describe('New parent ID (null to make root)'),
     } as SchemaShape,
     async (args) => {
+      // Cycle detection: walk the proposed parent's ancestor chain
+      if (args.parentId) {
+        const visited = new Set<string>([args.entityId]);
+        let checkId: string | null = args.parentId;
+        while (checkId) {
+          if (visited.has(checkId)) {
+            return { content: [{ type: 'text' as const, text: 'Cannot set parent: would create circular reference' }], isError: true };
+          }
+          visited.add(checkId);
+          const checkEntity = getThreadById(checkId) ?? getContainerById(checkId);
+          checkId = checkEntity?.parentId ?? null;
+        }
+      }
+
       const thread = getThreadById(args.entityId);
       if (thread) {
         const success = updateThread(args.entityId, { parentId: args.parentId });
@@ -498,9 +542,13 @@ export function registerTools(server: McpServer): void {
     } as SchemaShape,
     async (args) => {
       const ancestors: (Thread | Container)[] = [];
+      const visited = new Set<string>();
       let currentId: string | null = args.entityId;
 
       while (currentId) {
+        if (visited.has(currentId)) break;
+        visited.add(currentId);
+
         const thread: Thread | undefined = getThreadById(currentId);
         const container: Container | undefined = thread ? undefined : getContainerById(currentId);
         const entity: Thread | Container | undefined = thread ?? container;
@@ -521,7 +569,11 @@ export function registerTools(server: McpServer): void {
       entityId: z.string().describe('Root entity ID'),
     } as SchemaShape,
     async (args) => {
+      const visited = new Set<string>();
       const collectChildren = (parentId: string): { threads: Thread[]; containers: Container[] } => {
+        if (visited.has(parentId)) return { threads: [], containers: [] };
+        visited.add(parentId);
+
         const threads = getAllThreads().filter(t => t.parentId === parentId);
         const containers = getAllContainers().filter(c => c.parentId === parentId);
 
