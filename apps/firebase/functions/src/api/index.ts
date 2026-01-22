@@ -18,6 +18,7 @@ const MAX_NAME_LENGTH = 200;
 const MAX_DESCRIPTION_LENGTH = 2000;
 const MAX_PROGRESS_NOTE_LENGTH = 5000;
 const MAX_TAGS_COUNT = 50;
+const MAX_FUTURE_OFFSET_HOURS = 24;
 
 interface ValidationError {
   field: string;
@@ -142,8 +143,11 @@ function validateTags(tags: unknown): { sanitized: string[]; errors: ValidationE
     return { sanitized: [], errors };
   }
 
-  // Filter to strings only
-  const stringTags = tags.filter((tag): tag is string => typeof tag === 'string');
+  // Filter to strings only, trim and remove empty
+  const stringTags = tags
+    .filter((tag): tag is string => typeof tag === 'string')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
 
   if (stringTags.length > MAX_TAGS_COUNT) {
     errors.push({
@@ -171,6 +175,31 @@ function validateTimestamp(timestamp: unknown): ValidationError[] {
   const date = new Date(timestamp);
   if (isNaN(date.getTime())) {
     errors.push({ field: 'timestamp', message: 'Invalid timestamp format' });
+    return errors;
+  }
+
+  const maxFuture = new Date(Date.now() + MAX_FUTURE_OFFSET_HOURS * 60 * 60 * 1000);
+  if (date > maxFuture) {
+    errors.push({
+      field: 'timestamp',
+      message: `Timestamp cannot be more than ${MAX_FUTURE_OFFSET_HOURS} hours in the future`,
+    });
+  }
+  return errors;
+}
+
+/**
+ * Validate UUID format for parentId and groupId.
+ */
+function validateUUIDs(data: { parentId?: string | null; groupId?: string | null }): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  if (data.parentId !== undefined && data.parentId !== null && !uuidRegex.test(data.parentId)) {
+    errors.push({ field: 'parentId', message: 'Invalid parentId format (must be a valid UUID)' });
+  }
+  if (data.groupId !== undefined && data.groupId !== null && !uuidRegex.test(data.groupId)) {
+    errors.push({ field: 'groupId', message: 'Invalid groupId format (must be a valid UUID)' });
   }
   return errors;
 }
@@ -206,9 +235,10 @@ function validateCreateRequest(body: CreateThreadRequest): { errors: ValidationE
   const enumErrors = validateEnums(body);
   const stringErrors = validateStrings(body, true);
   const { sanitized: sanitizedTags, errors: tagErrors } = validateTags(body.tags);
+  const uuidErrors = validateUUIDs(body);
 
   return {
-    errors: [...enumErrors, ...stringErrors, ...tagErrors],
+    errors: [...enumErrors, ...stringErrors, ...tagErrors, ...uuidErrors],
     sanitizedTags,
   };
 }
@@ -222,9 +252,10 @@ function validateUpdateRequest(body: UpdateThreadRequest): { errors: ValidationE
   const { sanitized: sanitizedTags, errors: tagErrors } = body.tags !== undefined
     ? validateTags(body.tags)
     : { sanitized: undefined as string[] | undefined, errors: [] };
+  const uuidErrors = validateUUIDs(body);
 
   return {
-    errors: [...enumErrors, ...stringErrors, ...tagErrors],
+    errors: [...enumErrors, ...stringErrors, ...tagErrors, ...uuidErrors],
     sanitizedTags,
   };
 }

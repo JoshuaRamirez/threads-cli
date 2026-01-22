@@ -68,9 +68,38 @@ export class JsonFileStore implements IFileThreadStore {
 
   private loadData(): ThreadsData {
     this.ensureDataFile();
-    const raw = fs.readFileSync(this.dataFile, 'utf-8');
-    const data = JSON.parse(raw) as ThreadsData;
-    return this.migrateData(data);
+    try {
+      const raw = fs.readFileSync(this.dataFile, 'utf-8');
+      const data = JSON.parse(raw) as ThreadsData;
+      return this.migrateData(data);
+    } catch (error) {
+      console.error(`[JsonFileStore] Failed to load data from ${this.dataFile}:`, error);
+
+      // Try to recover from backup
+      if (fs.existsSync(this.backupFile)) {
+        console.warn('[JsonFileStore] Attempting to recover from backup...');
+        try {
+          const backupRaw = fs.readFileSync(this.backupFile, 'utf-8');
+          const backupData = JSON.parse(backupRaw) as ThreadsData;
+          const migratedData = this.migrateData(backupData);
+          fs.writeFileSync(this.dataFile, JSON.stringify(migratedData, null, 2));
+          console.warn('[JsonFileStore] Successfully recovered from backup');
+          return migratedData;
+        } catch (backupError) {
+          console.error('[JsonFileStore] Backup recovery failed:', backupError);
+        }
+      }
+
+      // Last resort: return empty state
+      console.error('[JsonFileStore] All recovery attempts failed. Initializing with empty state.');
+      const emptyData: ThreadsData = { threads: [], containers: [], groups: [], version: '1.0.0' };
+      try {
+        fs.writeFileSync(this.dataFile, JSON.stringify(emptyData, null, 2));
+      } catch (writeError) {
+        console.error('[JsonFileStore] Failed to write empty state:', writeError);
+      }
+      return emptyData;
+    }
   }
 
   private saveData(data: ThreadsData): void {
@@ -287,25 +316,35 @@ export class JsonFileStore implements IFileThreadStore {
       return { exists: false };
     }
 
-    const stats = fs.statSync(this.backupFile);
-    const raw = fs.readFileSync(this.backupFile, 'utf-8');
-    const data = this.migrateData(JSON.parse(raw) as ThreadsData);
+    try {
+      const stats = fs.statSync(this.backupFile);
+      const raw = fs.readFileSync(this.backupFile, 'utf-8');
+      const data = this.migrateData(JSON.parse(raw) as ThreadsData);
 
-    return {
-      exists: true,
-      timestamp: stats.mtime,
-      threadCount: data.threads.length,
-      containerCount: data.containers.length,
-      groupCount: data.groups.length,
-    };
+      return {
+        exists: true,
+        timestamp: stats.mtime,
+        threadCount: data.threads.length,
+        containerCount: data.containers.length,
+        groupCount: data.groups.length,
+      };
+    } catch (error) {
+      console.error('[JsonFileStore] Failed to parse backup file:', error);
+      return { exists: false };
+    }
   }
 
   loadBackupData(): ThreadsData | undefined {
     if (!fs.existsSync(this.backupFile)) {
       return undefined;
     }
-    const raw = fs.readFileSync(this.backupFile, 'utf-8');
-    return this.migrateData(JSON.parse(raw) as ThreadsData);
+    try {
+      const raw = fs.readFileSync(this.backupFile, 'utf-8');
+      return this.migrateData(JSON.parse(raw) as ThreadsData);
+    } catch (error) {
+      console.error('[JsonFileStore] Failed to parse backup file:', error);
+      return undefined;
+    }
   }
 
   restoreFromBackup(): boolean {
@@ -317,6 +356,14 @@ export class JsonFileStore implements IFileThreadStore {
 
     const currentData = fs.readFileSync(this.dataFile, 'utf-8');
     const backupData = fs.readFileSync(this.backupFile, 'utf-8');
+
+    // Validate backup JSON before swapping
+    try {
+      JSON.parse(backupData);
+    } catch (error) {
+      console.error('[JsonFileStore] Backup file contains invalid JSON:', error);
+      return false;
+    }
 
     // Swap: backup becomes current, current becomes backup
     fs.writeFileSync(this.dataFile, backupData);
