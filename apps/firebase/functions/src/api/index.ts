@@ -10,6 +10,189 @@ import { FirestoreStore } from '@joshua2048/threads-firebase-storage';
 import { Thread, Importance } from '@joshua2048/threads-core';
 import { v4 as uuidv4 } from 'uuid';
 
+// Validation constants
+const VALID_STATUS = ['active', 'paused', 'stopped', 'completed', 'archived'] as const;
+const VALID_TEMPERATURE = ['frozen', 'freezing', 'cold', 'tepid', 'warm', 'hot'] as const;
+const VALID_SIZE = ['tiny', 'small', 'medium', 'large', 'huge'] as const;
+const MAX_NAME_LENGTH = 200;
+const MAX_DESCRIPTION_LENGTH = 2000;
+const MAX_PROGRESS_NOTE_LENGTH = 5000;
+const MAX_TAGS_COUNT = 50;
+
+interface ValidationError {
+  field: string;
+  message: string;
+}
+
+/**
+ * Validate thread enum fields.
+ */
+function validateEnums(data: Partial<CreateThreadRequest | UpdateThreadRequest>): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  if (data.status !== undefined && !VALID_STATUS.includes(data.status as typeof VALID_STATUS[number])) {
+    errors.push({
+      field: 'status',
+      message: `Invalid status. Must be one of: ${VALID_STATUS.join(', ')}`,
+    });
+  }
+
+  if (data.temperature !== undefined && !VALID_TEMPERATURE.includes(data.temperature as typeof VALID_TEMPERATURE[number])) {
+    errors.push({
+      field: 'temperature',
+      message: `Invalid temperature. Must be one of: ${VALID_TEMPERATURE.join(', ')}`,
+    });
+  }
+
+  if (data.size !== undefined && !VALID_SIZE.includes(data.size as typeof VALID_SIZE[number])) {
+    errors.push({
+      field: 'size',
+      message: `Invalid size. Must be one of: ${VALID_SIZE.join(', ')}`,
+    });
+  }
+
+  if (data.importance !== undefined) {
+    const imp = data.importance;
+    if (!Number.isInteger(imp) || imp < 1 || imp > 5) {
+      errors.push({
+        field: 'importance',
+        message: 'Invalid importance. Must be an integer between 1 and 5',
+      });
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Validate string fields for length constraints.
+ */
+function validateStrings(data: Partial<CreateThreadRequest | UpdateThreadRequest>, requireName: boolean): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  if (requireName) {
+    if (!data.name?.trim()) {
+      errors.push({
+        field: 'name',
+        message: 'Name is required and cannot be empty',
+      });
+    } else if (data.name.trim().length > MAX_NAME_LENGTH) {
+      errors.push({
+        field: 'name',
+        message: `Name exceeds maximum length of ${MAX_NAME_LENGTH} characters`,
+      });
+    }
+  } else if (data.name !== undefined) {
+    if (!data.name?.trim()) {
+      errors.push({
+        field: 'name',
+        message: 'Name cannot be empty',
+      });
+    } else if (data.name.trim().length > MAX_NAME_LENGTH) {
+      errors.push({
+        field: 'name',
+        message: `Name exceeds maximum length of ${MAX_NAME_LENGTH} characters`,
+      });
+    }
+  }
+
+  if (data.description !== undefined && data.description.length > MAX_DESCRIPTION_LENGTH) {
+    errors.push({
+      field: 'description',
+      message: `Description exceeds maximum length of ${MAX_DESCRIPTION_LENGTH} characters`,
+    });
+  }
+
+  return errors;
+}
+
+/**
+ * Validate tags array.
+ * Returns sanitized tags (filtered to strings only, limited count) and any errors.
+ */
+function validateTags(tags: unknown): { sanitized: string[]; errors: ValidationError[] } {
+  const errors: ValidationError[] = [];
+
+  if (tags === undefined) {
+    return { sanitized: [], errors };
+  }
+
+  if (!Array.isArray(tags)) {
+    errors.push({
+      field: 'tags',
+      message: 'Tags must be an array',
+    });
+    return { sanitized: [], errors };
+  }
+
+  // Filter to strings only
+  const stringTags = tags.filter((tag): tag is string => typeof tag === 'string');
+
+  if (stringTags.length > MAX_TAGS_COUNT) {
+    errors.push({
+      field: 'tags',
+      message: `Tags exceed maximum count of ${MAX_TAGS_COUNT}`,
+    });
+    return { sanitized: stringTags.slice(0, MAX_TAGS_COUNT), errors };
+  }
+
+  return { sanitized: stringTags, errors };
+}
+
+/**
+ * Validate progress note.
+ */
+function validateProgressNote(note: unknown): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  if (!note || typeof note !== 'string' || !note.trim()) {
+    errors.push({
+      field: 'note',
+      message: 'Note is required and cannot be empty',
+    });
+    return errors;
+  }
+
+  if (note.length > MAX_PROGRESS_NOTE_LENGTH) {
+    errors.push({
+      field: 'note',
+      message: `Note exceeds maximum length of ${MAX_PROGRESS_NOTE_LENGTH} characters`,
+    });
+  }
+
+  return errors;
+}
+
+/**
+ * Validate a create thread request. Returns errors and sanitized tags.
+ */
+function validateCreateRequest(body: CreateThreadRequest): { errors: ValidationError[]; sanitizedTags: string[] } {
+  const enumErrors = validateEnums(body);
+  const stringErrors = validateStrings(body, true);
+  const { sanitized: sanitizedTags, errors: tagErrors } = validateTags(body.tags);
+
+  return {
+    errors: [...enumErrors, ...stringErrors, ...tagErrors],
+    sanitizedTags,
+  };
+}
+
+/**
+ * Validate an update thread request. Returns errors and sanitized tags if provided.
+ */
+function validateUpdateRequest(body: UpdateThreadRequest): { errors: ValidationError[]; sanitizedTags?: string[] } {
+  const enumErrors = validateEnums(body);
+  const stringErrors = validateStrings(body, false);
+  const { sanitized: sanitizedTags, errors: tagErrors } = body.tags !== undefined
+    ? validateTags(body.tags)
+    : { sanitized: undefined as string[] | undefined, errors: [] };
+
+  return {
+    errors: [...enumErrors, ...stringErrors, ...tagErrors],
+    sanitizedTags,
+  };
+}
+
 // Types for request validation
 interface CreateThreadRequest {
   name: string;
@@ -87,8 +270,17 @@ function getStore(tenantId: string): FirestoreStore {
  * - POST   /threads/:id/progress  Add progress note
  */
 export const threads = functions.https.onRequest(async (req, res) => {
-  // CORS headers
-  res.set('Access-Control-Allow-Origin', '*');
+  // CORS headers - restrict to ChatGPT domains only
+  const allowedOrigins = [
+    'https://chat.openai.com',
+    'https://chatgpt.com',
+    'https://platform.openai.com'
+  ];
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.set('Access-Control-Allow-Origin', origin);
+    res.set('Vary', 'Origin');
+  }
   res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
@@ -118,8 +310,13 @@ export const threads = functions.https.onRequest(async (req, res) => {
     // POST /threads - Create thread
     if (req.method === 'POST' && pathParts.length === 0) {
       const body = req.body as CreateThreadRequest;
-      if (!body.name) {
-        res.status(400).json({ error: 'Missing required field: name' });
+
+      const { errors, sanitizedTags } = validateCreateRequest(body);
+      if (errors.length > 0) {
+        res.status(400).json({
+          error: 'Validation failed',
+          details: errors,
+        });
         return;
       }
 
@@ -127,13 +324,13 @@ export const threads = functions.https.onRequest(async (req, res) => {
       const thread: Thread = {
         type: 'thread',
         id: uuidv4(),
-        name: body.name,
+        name: body.name.trim(),
         description: body.description ?? '',
         status: body.status ?? 'active',
         temperature: body.temperature ?? 'warm',
         size: body.size ?? 'medium',
         importance: body.importance ?? 3,
-        tags: body.tags ?? [],
+        tags: sanitizedTags,
         parentId: body.parentId ?? null,
         groupId: body.groupId ?? null,
         dependencies: [],
@@ -165,7 +362,26 @@ export const threads = functions.https.onRequest(async (req, res) => {
     // PUT /threads/:id - Update thread
     if (req.method === 'PUT' && pathParts.length === 1) {
       const body = req.body as UpdateThreadRequest;
-      const success = await store.updateThread(threadId, body);
+
+      const { errors, sanitizedTags } = validateUpdateRequest(body);
+      if (errors.length > 0) {
+        res.status(400).json({
+          error: 'Validation failed',
+          details: errors,
+        });
+        return;
+      }
+
+      // Build update payload with sanitized values
+      const updatePayload: Partial<Thread> = { ...body };
+      if (body.name !== undefined) {
+        updatePayload.name = body.name.trim();
+      }
+      if (sanitizedTags !== undefined) {
+        updatePayload.tags = sanitizedTags;
+      }
+
+      const success = await store.updateThread(threadId, updatePayload);
       if (!success) {
         res.status(404).json({ error: 'Thread not found' });
         return;
@@ -189,8 +405,13 @@ export const threads = functions.https.onRequest(async (req, res) => {
     // POST /threads/:id/progress - Add progress
     if (req.method === 'POST' && pathParts.length === 2 && pathParts[1] === 'progress') {
       const body = req.body as AddProgressRequest;
-      if (!body.note) {
-        res.status(400).json({ error: 'Missing required field: note' });
+
+      const noteErrors = validateProgressNote(body.note);
+      if (noteErrors.length > 0) {
+        res.status(400).json({
+          error: 'Validation failed',
+          details: noteErrors,
+        });
         return;
       }
 
@@ -202,7 +423,7 @@ export const threads = functions.https.onRequest(async (req, res) => {
 
       const progressEntry = {
         id: uuidv4(),
-        note: body.note,
+        note: body.note.trim(),
         timestamp: body.timestamp ?? new Date().toISOString(),
       };
 

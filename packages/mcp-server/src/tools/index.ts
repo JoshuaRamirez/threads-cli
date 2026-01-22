@@ -121,12 +121,18 @@ export function registerTools(server: McpServer): void {
         return { content: [{ type: 'text' as const, text: `Thread not found: ${args.id}` }], isError: true };
       }
 
-      updateThread(args.id, { status: 'archived' });
+      const success = updateThread(args.id, { status: 'archived' });
+      if (!success) {
+        return { content: [{ type: 'text' as const, text: `Failed to archive thread: ${args.id}` }], isError: true };
+      }
 
       if (args.cascade) {
         const children = getAllThreads().filter(t => t.parentId === args.id);
         for (const child of children) {
-          updateThread(child.id, { status: 'archived' });
+          const childSuccess = updateThread(child.id, { status: 'archived' });
+          if (!childSuccess) {
+            return { content: [{ type: 'text' as const, text: `Failed to archive child thread: ${child.id}` }], isError: true };
+          }
         }
       }
 
@@ -185,7 +191,10 @@ export function registerTools(server: McpServer): void {
       };
 
       const updatedProgress = [...(thread.progress ?? []), progressEntry];
-      updateThread(args.threadId, { progress: updatedProgress });
+      const success = updateThread(args.threadId, { progress: updatedProgress });
+      if (!success) {
+        return { content: [{ type: 'text' as const, text: `Failed to add progress to thread: ${args.threadId}` }], isError: true };
+      }
 
       return { content: [{ type: 'text' as const, text: JSON.stringify(progressEntry, null, 2) }] };
     }
@@ -234,7 +243,10 @@ export function registerTools(server: McpServer): void {
 
       const updatedProgress = [...(thread.progress ?? [])];
       updatedProgress[progressIndex] = { ...updatedProgress[progressIndex], note: args.note };
-      updateThread(args.threadId, { progress: updatedProgress });
+      const success = updateThread(args.threadId, { progress: updatedProgress });
+      if (!success) {
+        return { content: [{ type: 'text' as const, text: `Failed to edit progress on thread: ${args.threadId}` }], isError: true };
+      }
 
       return { content: [{ type: 'text' as const, text: JSON.stringify(updatedProgress[progressIndex], null, 2) }] };
     }
@@ -258,7 +270,10 @@ export function registerTools(server: McpServer): void {
         return { content: [{ type: 'text' as const, text: `Progress entry not found: ${args.progressId}` }], isError: true };
       }
 
-      updateThread(args.threadId, { progress: updatedProgress });
+      const success = updateThread(args.threadId, { progress: updatedProgress });
+      if (!success) {
+        return { content: [{ type: 'text' as const, text: `Failed to delete progress from thread: ${args.threadId}` }], isError: true };
+      }
       return { content: [{ type: 'text' as const, text: `Deleted progress entry: ${args.progressId}` }] };
     }
   );
@@ -406,13 +421,19 @@ export function registerTools(server: McpServer): void {
     async (args) => {
       const thread = getThreadById(args.entityId);
       if (thread) {
-        updateThread(args.entityId, { parentId: args.parentId });
+        const success = updateThread(args.entityId, { parentId: args.parentId });
+        if (!success) {
+          return { content: [{ type: 'text' as const, text: `Failed to set parent of thread: ${args.entityId}` }], isError: true };
+        }
         return { content: [{ type: 'text' as const, text: `Set parent of thread ${thread.name} to ${args.parentId}` }] };
       }
 
       const container = getContainerById(args.entityId);
       if (container) {
-        updateContainer(args.entityId, { parentId: args.parentId });
+        const success = updateContainer(args.entityId, { parentId: args.parentId });
+        if (!success) {
+          return { content: [{ type: 'text' as const, text: `Failed to set parent of container: ${args.entityId}` }], isError: true };
+        }
         return { content: [{ type: 'text' as const, text: `Set parent of container ${container.name} to ${args.parentId}` }] };
       }
 
@@ -430,13 +451,19 @@ export function registerTools(server: McpServer): void {
     async (args) => {
       const thread = getThreadById(args.entityId);
       if (thread) {
-        updateThread(args.entityId, { groupId: args.groupId });
+        const success = updateThread(args.entityId, { groupId: args.groupId });
+        if (!success) {
+          return { content: [{ type: 'text' as const, text: `Failed to move thread to group: ${args.entityId}` }], isError: true };
+        }
         return { content: [{ type: 'text' as const, text: `Moved thread ${thread.name} to group ${args.groupId}` }] };
       }
 
       const container = getContainerById(args.entityId);
       if (container) {
-        updateContainer(args.entityId, { groupId: args.groupId });
+        const success = updateContainer(args.entityId, { groupId: args.groupId });
+        if (!success) {
+          return { content: [{ type: 'text' as const, text: `Failed to move container to group: ${args.entityId}` }], isError: true };
+        }
         return { content: [{ type: 'text' as const, text: `Moved container ${container.name} to group ${args.groupId}` }] };
       }
 

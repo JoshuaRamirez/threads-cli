@@ -29,7 +29,7 @@ security:
   - bearerAuth: []
 
 paths:
-  /:
+  /threads:
     get:
       operationId: listThreads
       summary: List all threads
@@ -74,7 +74,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /{threadId}:
+  /threads/{threadId}:
     parameters:
       - $ref: '#/components/parameters/ThreadId'
 
@@ -142,7 +142,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /{threadId}/progress:
+  /threads/{threadId}/progress:
     parameters:
       - $ref: '#/components/parameters/ThreadId'
 
@@ -269,6 +269,16 @@ components:
           items:
             $ref: '#/components/schemas/ProgressEntry'
           description: Timestamped progress notes
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetailsEntry'
+          description: Versioned snapshots of structured information (latest is current)
+        dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dependency'
+          description: Links to other threads with context
         createdAt:
           type: string
           format: date-time
@@ -297,6 +307,56 @@ components:
           type: string
           format: date-time
           description: When the progress was recorded
+
+    DetailsEntry:
+      type: object
+      required:
+        - id
+        - timestamp
+        - content
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique details entry identifier
+        timestamp:
+          type: string
+          format: date-time
+          description: When this snapshot was created
+        content:
+          type: string
+          description: Structured information content
+          example: "Current implementation uses JWT tokens with 1-hour expiry"
+
+    Dependency:
+      type: object
+      required:
+        - threadId
+        - why
+        - what
+        - how
+        - when
+      properties:
+        threadId:
+          type: string
+          format: uuid
+          description: ID of the dependent thread
+        why:
+          type: string
+          description: Reason for the dependency
+          example: "Authentication required before API calls"
+        what:
+          type: string
+          description: What is being depended upon
+          example: "OAuth token generation"
+        how:
+          type: string
+          description: How the dependency is used
+          example: "Token passed in Authorization header"
+        when:
+          type: string
+          description: When the dependency applies
+          example: "During all authenticated API requests"
 
     Status:
       type: string
