@@ -13,8 +13,8 @@ import {
   updateThread,
   getAllContainers,
   updateContainer
-} from '@joshua2048/threads-storage';
-import { Group } from '@joshua2048/threads-core';
+} from 'threads-storage';
+import { Group } from 'threads-types';
 import chalk from 'chalk';
 
 function findThread(identifier: string) {

@@ -8,8 +8,8 @@ import {
   getGroupByName,
   loadData,
   saveData
-} from '@joshua2048/threads-storage';
-import { Thread } from '@joshua2048/threads-core';
+} from 'threads-storage';
+import { Thread } from 'threads-types';
 import { formatThreadSummary } from '../utils';
 import chalk from 'chalk';
 

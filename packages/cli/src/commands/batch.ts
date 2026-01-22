@@ -8,8 +8,8 @@ import {
   getGroupById,
   getGroupByName,
   updateThread
-} from '@joshua2048/threads-storage';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, ProgressEntry } from '@joshua2048/threads-core';
+} from 'threads-storage';
+import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, ProgressEntry } from 'threads-types';
 import chalk from 'chalk';
 
 // Valid values for validation

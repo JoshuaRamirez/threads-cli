@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@joshua2048/threads-storage';
-import { Thread } from '@joshua2048/threads-core';
+import { getThreadById, getThreadByName, getAllThreads, updateThread } from 'threads-storage';
+import { Thread } from 'threads-types';
 import chalk from 'chalk';
 
 function findThread(identifier: string) {

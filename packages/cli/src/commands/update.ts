@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@joshua2048/threads-storage';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance } from '@joshua2048/threads-core';
+import { getThreadById, getThreadByName, getAllThreads, updateThread } from 'threads-storage';
+import { Thread, ThreadStatus, Temperature, ThreadSize, Importance } from 'threads-types';
 import { formatStatus, formatTemperature, formatSize, formatImportance } from '../utils';
 import chalk from 'chalk';
 

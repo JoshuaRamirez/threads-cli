@@ -1,4 +1,4 @@
-import { Thread, ProgressEntry } from '@joshua2048/threads-core';
+import { Thread, ProgressEntry } from 'threads-types';
 import {
   parseDate,
   truncate,

@@ -9,10 +9,10 @@
  */
 
 import { Command } from 'commander';
-import { ThreadsData, Thread, Group } from '@joshua2048/threads-core';
+import { ThreadsData, Thread, Group } from 'threads-types';
 
 // Mock the storage module before importing the command
-jest.mock('@joshua2048/threads-storage', () => ({
+jest.mock('threads-storage', () => ({
   loadData: jest.fn(),
   loadBackupData: jest.fn(),
   getBackupInfo: jest.fn(),
@@ -43,7 +43,7 @@ import {
   getBackupInfo,
   restoreFromBackup,
   getBackupFilePath,
-} from '@joshua2048/threads-storage';
+} from 'threads-storage';
 
 // Type the mocks
 const mockLoadData = loadData as jest.MockedFunction<typeof loadData>;

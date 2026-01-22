@@ -11,7 +11,7 @@ import {
   Group,
   Entity,
   ThreadsData,
-} from '@joshua2048/threads-core';
+} from 'threads-types';
 
 /**
  * Filter criteria for finding threads.

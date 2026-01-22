@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getAllThreads } from '@joshua2048/threads-storage';
-import { Thread } from '@joshua2048/threads-core';
+import { getAllThreads } from 'threads-storage';
+import { Thread } from 'threads-types';
 import chalk from 'chalk';
 
 export type SearchScope = 'name' | 'progress' | 'details' | 'tags' | 'all';

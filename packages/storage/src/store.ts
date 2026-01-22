@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { ThreadsData, Thread, Group, Container, Entity } from '@joshua2048/threads-core';
+import { ThreadsData, Thread, Group, Container, Entity } from 'threads-types';
 import {
   IFileThreadStore,
   ThreadFilter,

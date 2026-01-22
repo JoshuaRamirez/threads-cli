@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { loadData, saveData, getThreadById, getThreadByName, getAllThreads } from '@joshua2048/threads-storage';
-import { Thread, ProgressEntry, DetailsEntry, Dependency } from '@joshua2048/threads-core';
+import { loadData, saveData, getThreadById, getThreadByName, getAllThreads } from 'threads-storage';
+import { Thread, ProgressEntry, DetailsEntry, Dependency } from 'threads-types';
 import chalk from 'chalk';
 
 /**

@@ -13,8 +13,8 @@ import {
   getAllEntities,
   updateThread,
   deleteThread
-} from '@joshua2048/threads-storage';
-import { Container, Entity, Thread } from '@joshua2048/threads-core';
+} from 'threads-storage';
+import { Container, Entity, Thread } from 'threads-types';
 import { formatContainerDetail } from '../utils';
 import chalk from 'chalk';
 import * as readline from 'readline';

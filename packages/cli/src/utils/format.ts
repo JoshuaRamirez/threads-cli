@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Group, Container, Entity } from '@joshua2048/threads-core';
+import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Group, Container, Entity } from 'threads-types';
 import { getLabel } from '../config';
 
 // Tree drawing characters (Unicode box-drawing)

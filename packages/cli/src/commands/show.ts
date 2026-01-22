@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, getContainerById, getContainerByName, getAllContainers, isContainer } from '@joshua2048/threads-storage';
+import { getThreadById, getThreadByName, getAllThreads, getContainerById, getContainerByName, getAllContainers, isContainer } from 'threads-storage';
 import { formatThreadDetail, formatContainerDetail } from '../utils';
-import { Entity, Thread, Container } from '@joshua2048/threads-core';
+import { Entity, Thread, Container } from 'threads-types';
 import chalk from 'chalk';
 
 function findEntity(identifier: string): Entity | undefined {

@@ -2,7 +2,7 @@
  * Unit tests for commands/batch.ts
  */
 
-import { Thread, Group } from '@joshua2048/threads-core';
+import { Thread, Group } from 'threads-types';
 
 // Mock uuid
 jest.mock('uuid', () => ({
@@ -10,7 +10,7 @@ jest.mock('uuid', () => ({
 }));
 
 // Mock storage module
-jest.mock('@joshua2048/threads-storage', () => ({
+jest.mock('threads-storage', () => ({
   getAllThreads: jest.fn(),
   getAllGroups: jest.fn(),
   getThreadById: jest.fn(),
@@ -37,7 +37,7 @@ import {
   getGroupById,
   getGroupByName,
   updateThread,
-} from '@joshua2048/threads-storage';
+} from 'threads-storage';
 import { batchCommand } from '../src/commands/batch';
 
 const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;

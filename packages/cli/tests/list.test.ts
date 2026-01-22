@@ -2,10 +2,10 @@
  * Unit tests for commands/list.ts
  */
 
-import { Thread, Group, Container } from '@joshua2048/threads-core';
+import { Thread, Group, Container } from 'threads-types';
 
 // Mock storage module
-jest.mock('@joshua2048/threads-storage', () => ({
+jest.mock('threads-storage', () => ({
   getAllThreads: jest.fn(),
   getAllGroups: jest.fn(),
   getAllContainers: jest.fn(),
@@ -43,7 +43,7 @@ import {
   getAllContainers,
   getAllEntities,
   getEntityById,
-} from '@joshua2048/threads-storage';
+} from 'threads-storage';
 import { listCommand } from '../src/commands/list';
 
 const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;

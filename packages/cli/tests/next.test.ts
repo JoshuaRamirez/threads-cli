@@ -1,11 +1,11 @@
-import { Thread, Temperature, Importance } from '@joshua2048/threads-core';
+import { Thread, Temperature, Importance } from 'threads-types';
 
 // Mock the storage module before importing next.ts
-jest.mock('@joshua2048/threads-storage', () => ({
+jest.mock('threads-storage', () => ({
   getAllThreads: jest.fn()
 }));
 
-import { getAllThreads } from '@joshua2048/threads-storage';
+import { getAllThreads } from 'threads-storage';
 import {
   temperatureScores,
   hoursSince,

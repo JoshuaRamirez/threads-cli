@@ -2,7 +2,7 @@
  * Unit tests for commands/new.ts
  */
 
-import { Thread, Group } from '@joshua2048/threads-core';
+import { Thread, Group } from 'threads-types';
 
 // Mock uuid
 jest.mock('uuid', () => ({
@@ -10,7 +10,7 @@ jest.mock('uuid', () => ({
 }));
 
 // Mock storage module
-jest.mock('@joshua2048/threads-storage', () => ({
+jest.mock('threads-storage', () => ({
   addThread: jest.fn(),
   getThreadByName: jest.fn(),
   getThreadById: jest.fn(),
@@ -41,7 +41,7 @@ import {
   getAllContainers,
   getGroupByName,
   getGroupById,
-} from '@joshua2048/threads-storage';
+} from 'threads-storage';
 import { newCommand } from '../src/commands/new';
 
 const mockAddThread = addThread as jest.MockedFunction<typeof addThread>;

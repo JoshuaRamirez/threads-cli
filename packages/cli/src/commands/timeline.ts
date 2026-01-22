@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getAllThreads, getThreadById, getThreadByName } from '@joshua2048/threads-storage';
-import { Thread, ProgressEntry } from '@joshua2048/threads-core';
+import { getAllThreads, getThreadById, getThreadByName } from 'threads-storage';
+import { Thread, ProgressEntry } from 'threads-types';
 import chalk from 'chalk';
 
 export interface TimelineEntry {

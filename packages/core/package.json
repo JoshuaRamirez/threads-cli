@@ -1,5 +1,5 @@
 {
-  "name": "@joshua2048/threads-core",
+  "name": "threads-types",
   "version": "1.0.0",
   "description": "Core types and models for Threads platform",
   "main": "dist/index.js",

@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@joshua2048/threads-storage';
-import { ProgressEntry } from '@joshua2048/threads-core';
+import { getThreadById, getThreadByName, getAllThreads, updateThread } from 'threads-storage';
+import { ProgressEntry } from 'threads-types';
 import chalk from 'chalk';
 
 function parseDateTime(input: string): Date | null {

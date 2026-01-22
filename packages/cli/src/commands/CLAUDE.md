@@ -6,7 +6,7 @@ Each file exports a single `Command` object from Commander.js. Commands are regi
 
 ```typescript
 import { Command } from 'commander';
-import { /* CRUD functions */ } from '@joshua2048/threads-storage';
+import { /* CRUD functions */ } from 'threads-storage';
 import { /* formatters */ } from '../utils';
 import chalk from 'chalk';
 

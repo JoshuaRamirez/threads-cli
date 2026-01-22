@@ -5,10 +5,10 @@
  * following AAA (Arrange-Act-Assert) pattern with one assertion per test.
  */
 
-import { Thread, Temperature } from '@joshua2048/threads-core';
+import { Thread, Temperature } from 'threads-types';
 
 // Mock the storage module before importing agenda functions
-jest.mock('@joshua2048/threads-storage', () => ({
+jest.mock('threads-storage', () => ({
   getAllThreads: jest.fn(() => [])
 }));
 

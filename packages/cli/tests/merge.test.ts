@@ -10,10 +10,10 @@
  * - mergeCommand tests: full command behavior with options
  */
 
-import { Thread, ThreadsData, ProgressEntry, DetailsEntry, Dependency } from '@joshua2048/threads-core';
+import { Thread, ThreadsData, ProgressEntry, DetailsEntry, Dependency } from 'threads-types';
 
 // Mock the storage module before importing the command
-jest.mock('@joshua2048/threads-storage', () => ({
+jest.mock('threads-storage', () => ({
   loadData: jest.fn(),
   saveData: jest.fn(),
   getThreadById: jest.fn(),
@@ -56,7 +56,7 @@ import {
   getThreadById,
   getThreadByName,
   getAllThreads,
-} from '@joshua2048/threads-storage';
+} from 'threads-storage';
 
 // Type the mocks
 const mockLoadData = loadData as jest.MockedFunction<typeof loadData>;

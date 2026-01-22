@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getAllThreads } from '@joshua2048/threads-storage';
-import { Thread, Temperature } from '@joshua2048/threads-core';
+import { getAllThreads } from 'threads-storage';
+import { Thread, Temperature } from 'threads-types';
 import { formatTemperature, formatImportanceStars } from '../utils';
 import chalk from 'chalk';
 

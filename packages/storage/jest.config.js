@@ -10,8 +10,8 @@ module.exports = {
     ...tsJestTransformCfg,
   },
   moduleNameMapper: {
-    "^@joshua2048/threads-core$": "<rootDir>/../core/src/index.ts",
-    "^@joshua2048/threads-storage$": "<rootDir>/src/index.ts",
+    "^threads-types$": "<rootDir>/../core/src/index.ts",
+    "^threads-storage$": "<rootDir>/src/index.ts",
   },
   collectCoverageFrom: [
     "src/**/*.ts",

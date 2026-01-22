@@ -5,7 +5,7 @@
  * with full mocking of storage dependencies.
  */
 
-import { Thread, ThreadsData, Group } from '@joshua2048/threads-core';
+import { Thread, ThreadsData, Group } from 'threads-types';
 
 // Mock uuid to return predictable IDs
 jest.mock('uuid', () => ({
@@ -13,7 +13,7 @@ jest.mock('uuid', () => ({
 }));
 
 // Mock storage module
-jest.mock('@joshua2048/threads-storage', () => ({
+jest.mock('threads-storage', () => ({
   getThreadById: jest.fn(),
   getThreadByName: jest.fn(),
   getAllThreads: jest.fn(),
@@ -43,7 +43,7 @@ import {
   getGroupByName,
   loadData,
   saveData,
-} from '@joshua2048/threads-storage';
+} from 'threads-storage';
 import {
   cloneThread,
   cloneWithChildren,

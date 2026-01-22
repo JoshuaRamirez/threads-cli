@@ -1,4 +1,4 @@
-import { Thread } from '@joshua2048/threads-core';
+import { Thread } from 'threads-types';
 import { findMatches, searchThread, MatchContext, SearchScope } from '../src/commands/search';
 
 // Factory for creating mock threads with controlled data

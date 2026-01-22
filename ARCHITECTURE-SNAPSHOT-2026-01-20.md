@@ -59,14 +59,14 @@ threads/
 ├── tsconfig.base.json            # Shared TypeScript config
 │
 ├── packages/
-│   ├── core/                     # @joshua2048/threads-core
+│   ├── core/                     # threads-types
 │   │   ├── package.json
 │   │   └── src/
 │   │       ├── models/           # Thread, Container, Group, types
 │   │       ├── services/         # Pure domain logic
 │   │       └── index.ts
 │   │
-│   ├── storage/                  # @joshua2048/threads-storage
+│   ├── storage/                  # threads-storage
 │   │   ├── package.json
 │   │   └── src/
 │   │       ├── interface.ts      # IThreadStore contract

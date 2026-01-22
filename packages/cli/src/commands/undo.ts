@@ -5,7 +5,7 @@ import {
   getBackupInfo,
   restoreFromBackup,
   getBackupFilePath
-} from '@joshua2048/threads-storage';
+} from 'threads-storage';
 import chalk from 'chalk';
 
 export const undoCommand = new Command('undo')

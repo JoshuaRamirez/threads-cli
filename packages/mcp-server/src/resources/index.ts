@@ -12,7 +12,7 @@ import {
   getThreadById,
   getContainerById,
   getGroupById,
-} from '@joshua2048/threads-storage';
+} from 'threads-storage';
 
 export function registerResources(server: McpServer): void {
   // Resource templates for dynamic access
