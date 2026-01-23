@@ -1,6 +1,6 @@
 {
   "name": "@redjay/threads-storage",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Storage adapters for Threads platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

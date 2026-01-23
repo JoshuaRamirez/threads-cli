@@ -1,6 +1,6 @@
 {
   "name": "@redjay/threads",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Entry point composition package for Threads CLI - wires together CLI + storage based on config",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

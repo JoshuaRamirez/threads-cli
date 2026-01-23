@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-01-22
+
+### Added
+- **@redjay/threads-json-storage package** - extracted JsonFileStore implementation
+- **@redjay/threads composition package** - entry point wiring CLI + storage based on config
+- **Dependency injection in CLI** - StorageService, context module, createCLI() factory
+- **Config-based storage selection** - supports json (default) and firebase backends
+
+### Changed
+- **@redjay/threads-storage** (v2.0.0) - now exports interfaces only (IStorageClient, IFileThreadStore, IAsyncThreadStore)
+- **"Double inversion" pattern** - storage calls client callbacks instead of returning values
+- **CLI commands** - all 26 commands now use getStorage() from context module
+- **Test mocking pattern** - tests mock context module instead of storage exports
+
 ## [1.1.0] - 2025-01-17
 
 ### Added
