@@ -1,23 +1,16 @@
 import { Command } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  getThreadById,
-  getThreadByName,
-  getAllThreads,
-  addThread,
-  getGroupByName,
-  loadData,
-  saveData
-} from '@redjay/threads-storage';
 import { Thread } from '@redjay/threads-core';
 import { formatThreadSummary } from '../utils';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 export function findThread(identifier: string): Thread | undefined {
-  let thread = getThreadById(identifier);
-  if (!thread) thread = getThreadByName(identifier);
+  const storage = getStorage();
+  let thread = storage.getThreadById(identifier);
+  if (!thread) thread = storage.getThreadByName(identifier);
   if (!thread) {
-    const all = getAllThreads();
+    const all = storage.getAllThreads();
     const matches = all.filter(t =>
       t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
       t.name.toLowerCase().includes(identifier.toLowerCase())
@@ -96,6 +89,7 @@ export const cloneCommand = new Command('clone')
   .option('--parent <id>', 'Set a different parent for the clone')
   .option('--group <name>', 'Set a different group for the clone')
   .action((sourceIdentifier: string, newName: string | undefined, options) => {
+    const storage = getStorage();
     const source = findThread(sourceIdentifier);
 
     if (!source) {
@@ -107,7 +101,7 @@ export const cloneCommand = new Command('clone')
     const cloneName = newName || `${source.name} (copy)`;
 
     // Check for duplicate name
-    const existing = getThreadByName(cloneName);
+    const existing = storage.getThreadByName(cloneName);
     if (existing) {
       console.log(chalk.red(`Thread "${cloneName}" already exists`));
       return;
@@ -127,7 +121,7 @@ export const cloneCommand = new Command('clone')
     // Determine group
     let groupId: string | null = source.groupId;
     if (options.group) {
-      const group = getGroupByName(options.group);
+      const group = storage.getGroupByName(options.group);
       if (!group) {
         console.log(chalk.red(`Group "${options.group}" not found`));
         return;
@@ -135,15 +129,15 @@ export const cloneCommand = new Command('clone')
       groupId = group.id;
     }
 
-    const allThreads = getAllThreads();
+    const allThreads = storage.getAllThreads();
 
     if (options.withChildren) {
-      // Clone with children - batch save for efficiency
+      // Clone with children - add each thread individually
       const clonedThreads = cloneWithChildren(source, cloneName, parentId, groupId, allThreads);
 
-      const data = loadData();
-      data.threads.push(...clonedThreads);
-      saveData(data);
+      for (const thread of clonedThreads) {
+        storage.addThread(thread);
+      }
 
       console.log(chalk.green(`\nCloned "${source.name}" with ${clonedThreads.length} thread(s):\n`));
       for (const thread of clonedThreads) {
@@ -153,7 +147,7 @@ export const cloneCommand = new Command('clone')
     } else {
       // Clone single thread
       const cloned = cloneThread(source, cloneName, parentId, groupId);
-      addThread(cloned);
+      storage.addThread(cloned);
 
       console.log(chalk.green(`\nCloned "${source.name}":\n`));
       console.log(formatThreadSummary(cloned));

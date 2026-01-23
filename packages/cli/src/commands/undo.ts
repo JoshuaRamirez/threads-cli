@@ -1,11 +1,5 @@
 import { Command } from 'commander';
-import {
-  loadData,
-  loadBackupData,
-  getBackupInfo,
-  restoreFromBackup,
-  getBackupFilePath
-} from '@redjay/threads-storage';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 export const undoCommand = new Command('undo')
@@ -13,7 +7,8 @@ export const undoCommand = new Command('undo')
   .option('--dry-run', 'Show what would be restored without making changes')
   .option('--list', 'Show backup info and timestamp')
   .action((options) => {
-    const backupInfo = getBackupInfo();
+    const storage = getStorage();
+    const backupInfo = storage.getBackupInfo();
 
     // Handle --list: show backup metadata
     if (options.list) {
@@ -24,7 +19,7 @@ export const undoCommand = new Command('undo')
       }
 
       console.log(chalk.bold('\nBackup Info:'));
-      console.log(`  Path:     ${getBackupFilePath()}`);
+      console.log(`  Path:     ${storage.getBackupFilePath()}`);
       console.log(`  Created:  ${backupInfo.timestamp!.toLocaleString()}`);
       console.log(`  Threads:  ${backupInfo.threadCount}`);
       console.log(`  Groups:   ${backupInfo.groupCount}`);
@@ -39,13 +34,15 @@ export const undoCommand = new Command('undo')
       return;
     }
 
-    const backupData = loadBackupData();
+    const backupData = storage.loadBackupData();
     if (!backupData) {
       console.log(chalk.red('Failed to load backup data.'));
       return;
     }
 
-    const currentData = loadData();
+    // Get current data by collecting from storage
+    const currentThreads = storage.getAllThreads();
+    const currentGroups = storage.getAllGroups();
 
     // Handle --dry-run: show diff summary
     if (options.dryRun) {
@@ -53,8 +50,8 @@ export const undoCommand = new Command('undo')
       console.log(`  Backup from: ${backupInfo.timestamp!.toLocaleString()}`);
       console.log('');
       console.log(chalk.bold('Current state:'));
-      console.log(`  Threads: ${currentData.threads.length}`);
-      console.log(`  Groups:  ${currentData.groups.length}`);
+      console.log(`  Threads: ${currentThreads.length}`);
+      console.log(`  Groups:  ${currentGroups.length}`);
       console.log('');
       console.log(chalk.bold('After restore:'));
       console.log(`  Threads: ${backupData.threads.length}`);
@@ -62,12 +59,12 @@ export const undoCommand = new Command('undo')
       console.log('');
 
       // Show thread-level changes
-      const currentIds = new Set(currentData.threads.map(t => t.id));
+      const currentIds = new Set(currentThreads.map(t => t.id));
       const backupIds = new Set(backupData.threads.map(t => t.id));
 
-      const added = currentData.threads.filter(t => !backupIds.has(t.id));
+      const added = currentThreads.filter(t => !backupIds.has(t.id));
       const removed = backupData.threads.filter(t => !currentIds.has(t.id));
-      const modified = currentData.threads.filter(t => {
+      const modified = currentThreads.filter(t => {
         if (!backupIds.has(t.id)) return false;
         const backup = backupData.threads.find(b => b.id === t.id);
         return backup && backup.updatedAt !== t.updatedAt;
@@ -86,7 +83,7 @@ export const undoCommand = new Command('undo')
     }
 
     // Perform restore (swap current with backup)
-    const success = restoreFromBackup();
+    const success = storage.restoreFromBackup();
     if (!success) {
       console.log(chalk.red('Failed to restore from backup.'));
       return;

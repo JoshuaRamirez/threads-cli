@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@redjay/threads-storage';
 import { Thread, ProgressEntry } from '@redjay/threads-core';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 /**
@@ -9,17 +9,18 @@ import chalk from 'chalk';
  * Prints appropriate messages for multiple matches or not found cases.
  */
 function findThread(identifier: string, label: string): Thread | null {
+  const storage = getStorage();
   // Try exact ID match first
-  let thread = getThreadById(identifier);
+  let thread = storage.getThreadById(identifier);
 
   // Try exact name match
   if (!thread) {
-    thread = getThreadByName(identifier);
+    thread = storage.getThreadByName(identifier);
   }
 
   // Try partial ID match
   if (!thread) {
-    const all = getAllThreads();
+    const all = storage.getAllThreads();
     const matches = all.filter(t => t.id.toLowerCase().startsWith(identifier.toLowerCase()));
     if (matches.length === 1) {
       thread = matches[0];
@@ -34,7 +35,7 @@ function findThread(identifier: string, label: string): Thread | null {
 
   // Try partial name match as last resort
   if (!thread) {
-    const all = getAllThreads();
+    const all = storage.getAllThreads();
     const matches = all.filter(t => t.name.toLowerCase().includes(identifier.toLowerCase()));
     if (matches.length === 1) {
       thread = matches[0];
@@ -120,8 +121,9 @@ export const moveProgressCommand = new Command('move-progress')
     );
 
     // Update both threads
-    updateThread(sourceThread.id, { progress: remainingEntries });
-    updateThread(destThread.id, { progress: newDestProgress });
+    const storage = getStorage();
+    storage.updateThread(sourceThread.id, { progress: remainingEntries });
+    storage.updateThread(destThread.id, { progress: newDestProgress });
 
     // Display confirmation
     if (countToMove === 1) {

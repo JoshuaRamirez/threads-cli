@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, updateThread, getAllEntities, getEntityById } from '@redjay/threads-storage';
 import { ThreadStatus, Temperature, ThreadSize, Importance, Entity } from '@redjay/threads-core';
 import { formatStatus, formatTemperature, formatSize, formatImportance } from '../utils';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 const validStatuses: ThreadStatus[] = ['active', 'paused', 'stopped', 'completed', 'archived'];
@@ -9,10 +9,11 @@ const validTemps: Temperature[] = ['frozen', 'freezing', 'cold', 'tepid', 'warm'
 const validSizes: ThreadSize[] = ['tiny', 'small', 'medium', 'large', 'huge'];
 
 function findThread(identifier: string) {
-  let thread = getThreadById(identifier);
-  if (!thread) thread = getThreadByName(identifier);
+  const storage = getStorage();
+  let thread = storage.getThreadById(identifier);
+  if (!thread) thread = storage.getThreadByName(identifier);
   if (!thread) {
-    const all = getAllThreads();
+    const all = storage.getAllThreads();
     const matches = all.filter(t =>
       t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
       t.name.toLowerCase().includes(identifier.toLowerCase())
@@ -23,7 +24,8 @@ function findThread(identifier: string) {
 }
 
 function findEntity(identifier: string): Entity | undefined {
-  const entities = getAllEntities();
+  const storage = getStorage();
+  const entities = storage.getAllEntities();
   let entity = entities.find(e => e.id === identifier);
   if (!entity) entity = entities.find(e => e.name.toLowerCase() === identifier.toLowerCase());
   if (!entity) {
@@ -130,7 +132,7 @@ export const setCommand = new Command('set')
         return;
     }
 
-    updateThread(thread.id, updates);
+    getStorage().updateThread(thread.id, updates);
 
     console.log(chalk.green(`\nUpdated "${thread.name}":`));
     console.log(`  ${property} → ${displayValue}`);

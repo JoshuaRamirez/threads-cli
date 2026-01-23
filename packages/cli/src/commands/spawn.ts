@@ -1,15 +1,16 @@
 import { Command, Option } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { getThreadById, getThreadByName, getAllThreads, addThread } from '@redjay/threads-storage';
 import { Thread, ThreadStatus, Temperature, ThreadSize, Importance } from '@redjay/threads-core';
 import { formatThreadSummary } from '../utils';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 function findThread(identifier: string) {
-  let thread = getThreadById(identifier);
-  if (!thread) thread = getThreadByName(identifier);
+  const storage = getStorage();
+  let thread = storage.getThreadById(identifier);
+  if (!thread) thread = storage.getThreadByName(identifier);
   if (!thread) {
-    const all = getAllThreads();
+    const all = storage.getAllThreads();
     const matches = all.filter(t =>
       t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
       t.name.toLowerCase().includes(identifier.toLowerCase())
@@ -29,6 +30,7 @@ export const spawnCommand = new Command('spawn')
   .option('-T, --tags <tags>', 'Comma-separated tags')
   .addOption(new Option('--tag <tags>').hideHelp())
   .action((parentIdentifier: string, name: string, options) => {
+    const storage = getStorage();
     const parent = findThread(parentIdentifier);
 
     if (!parent) {
@@ -37,7 +39,7 @@ export const spawnCommand = new Command('spawn')
     }
 
     // Check for duplicate name
-    const existing = getThreadByName(name);
+    const existing = storage.getThreadByName(name);
     if (existing) {
       console.log(chalk.red(`Thread "${name}" already exists`));
       return;
@@ -80,7 +82,7 @@ export const spawnCommand = new Command('spawn')
       updatedAt: now
     };
 
-    addThread(thread);
+    storage.addThread(thread);
 
     console.log(chalk.green(`\nSub-thread spawned under "${parent.name}":\n`));
     console.log(formatThreadSummary(thread));

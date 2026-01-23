@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import { getAllThreads } from '@redjay/threads-storage';
 import { Thread, Temperature, Importance } from '@redjay/threads-core';
 import { formatTemperature, formatImportanceStars } from '../utils';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 // Temperature score mapping (0-5 scale)
@@ -133,11 +133,12 @@ export const nextCommand = new Command('next')
   .option('-c, --count <n>', 'Number of recommendations to show', parseInt, 5)
   .option('-e, --explain', 'Show scoring breakdown for each thread')
   .action((options) => {
+    const storage = getStorage();
     const count = options.count || 5;
     const showExplain = options.explain || false;
 
     // Get all threads, filter to active only
-    const threads = getAllThreads().filter(t => t.status === 'active');
+    const threads = storage.getAllThreads().filter(t => t.status === 'active');
 
     if (threads.length === 0) {
       console.log(chalk.dim('No active threads to recommend'));

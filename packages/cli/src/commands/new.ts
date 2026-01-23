@@ -1,16 +1,17 @@
 import { Command, Option } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { addThread, getThreadByName, getGroupByName, getGroupById, getThreadById, getAllThreads, getContainerById, getAllContainers } from '@redjay/threads-storage';
 import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Entity } from '@redjay/threads-core';
 import { formatThreadSummary } from '../utils';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 function findParent(identifier: string): Entity | undefined {
+  const storage = getStorage();
   // Try threads first
-  let entity: Entity | undefined = getThreadById(identifier);
-  if (!entity) entity = getThreadByName(identifier);
+  let entity: Entity | undefined = storage.getThreadById(identifier);
+  if (!entity) entity = storage.getThreadByName(identifier);
   if (!entity) {
-    const threads = getAllThreads();
+    const threads = storage.getAllThreads();
     const matches = threads.filter(t =>
       t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
       t.name.toLowerCase().includes(identifier.toLowerCase())
@@ -19,10 +20,10 @@ function findParent(identifier: string): Entity | undefined {
   }
   // Try containers
   if (!entity) {
-    entity = getContainerById(identifier);
+    entity = storage.getContainerById(identifier);
   }
   if (!entity) {
-    const containers = getAllContainers();
+    const containers = storage.getAllContainers();
     const matches = containers.filter(c =>
       c.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
       c.name.toLowerCase().includes(identifier.toLowerCase())
@@ -46,11 +47,12 @@ export const newCommand = new Command('new')
   .option('-g, --group <group>', 'Group name or ID to assign thread to')
   .option('-p, --parent <parent>', 'Parent thread or container (creates sub-thread)')
   .action((name: string, options) => {
+    const storage = getStorage();
     // Apply defaults - coalesce --temp and --temperature aliases
     const temperatureValue = options.temp || options.temperature || 'warm';
     const importance = options.importance ? parseInt(options.importance) : 3;
     // Check for duplicate name
-    const existing = getThreadByName(name);
+    const existing = storage.getThreadByName(name);
     if (existing) {
       console.log(chalk.red(`Thread "${name}" already exists`));
       return;
@@ -94,11 +96,11 @@ export const newCommand = new Command('new')
     let groupId: string | null = null;
     if (options.group) {
       // Try by name first, then by ID
-      const groupByName = getGroupByName(options.group);
+      const groupByName = storage.getGroupByName(options.group);
       if (groupByName) {
         groupId = groupByName.id;
       } else {
-        const groupById = getGroupById(options.group);
+        const groupById = storage.getGroupById(options.group);
         if (groupById) {
           groupId = groupById.id;
         } else {
@@ -136,7 +138,7 @@ export const newCommand = new Command('new')
       updatedAt: now
     };
 
-    addThread(thread);
+    storage.addThread(thread);
 
     console.log(chalk.green('\nThread created:\n'));
     console.log(formatThreadSummary(thread));

@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { loadData, saveData, getThreadById, getThreadByName, getAllThreads } from '@redjay/threads-storage';
 import { Thread, ProgressEntry, DetailsEntry, Dependency } from '@redjay/threads-core';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 /**
@@ -8,14 +8,15 @@ import chalk from 'chalk';
  * Returns null with message if not found or ambiguous.
  */
 export function findThread(identifier: string, label: string): Thread | null {
-  let thread = getThreadById(identifier);
+  const storage = getStorage();
+  let thread = storage.getThreadById(identifier);
 
   if (!thread) {
-    thread = getThreadByName(identifier);
+    thread = storage.getThreadByName(identifier);
   }
 
   if (!thread) {
-    const all = getAllThreads();
+    const all = storage.getAllThreads();
     const matches = all.filter(t =>
       t.id.toLowerCase().startsWith(identifier.toLowerCase())
     );
@@ -31,7 +32,7 @@ export function findThread(identifier: string, label: string): Thread | null {
   }
 
   if (!thread) {
-    const all = getAllThreads();
+    const all = storage.getAllThreads();
     const matches = all.filter(t =>
       t.name.toLowerCase().includes(identifier.toLowerCase())
     );
@@ -105,6 +106,7 @@ export const mergeCommand = new Command('merge')
   .option('--keep', 'Keep source thread instead of archiving after merge')
   .option('--dry-run', 'Preview merge without making changes')
   .action((sourceIdentifier: string, targetIdentifier: string, options) => {
+    const storage = getStorage();
     const sourceThread = findThread(sourceIdentifier, 'Source');
     if (!sourceThread) return;
 
@@ -116,11 +118,11 @@ export const mergeCommand = new Command('merge')
       return;
     }
 
-    // Load all data for atomic updates
-    const data = loadData();
+    // Get all threads for finding children
+    const allThreads = storage.getAllThreads();
 
     // Find children of source thread that need reparenting
-    const children = data.threads.filter(t => t.parentId === sourceThread.id);
+    const children = allThreads.filter(t => t.parentId === sourceThread.id);
 
     // Compute merged values
     const mergedProgress = mergeProgress(targetThread.progress, sourceThread.progress);
@@ -171,48 +173,25 @@ export const mergeCommand = new Command('merge')
     }
 
     // Apply merge to target thread
-    const targetIndex = data.threads.findIndex(t => t.id === targetThread.id);
-    if (targetIndex === -1) {
-      console.log(chalk.red('Target thread disappeared during merge'));
-      return;
-    }
-
-    data.threads[targetIndex] = {
-      ...data.threads[targetIndex],
+    storage.updateThread(targetThread.id, {
       progress: mergedProgress,
       details: mergedDetails,
       tags: mergedTags,
-      dependencies: mergedDependencies,
-      updatedAt: new Date().toISOString()
-    };
+      dependencies: mergedDependencies
+    });
 
     // Reparent children
     for (const child of children) {
-      const childIndex = data.threads.findIndex(t => t.id === child.id);
-      if (childIndex !== -1) {
-        data.threads[childIndex] = {
-          ...data.threads[childIndex],
-          parentId: targetThread.id,
-          updatedAt: new Date().toISOString()
-        };
-      }
+      storage.updateThread(child.id, { parentId: targetThread.id });
     }
 
     // Archive source thread unless --keep
     if (!options.keep) {
-      const sourceIndex = data.threads.findIndex(t => t.id === sourceThread.id);
-      if (sourceIndex !== -1) {
-        data.threads[sourceIndex] = {
-          ...data.threads[sourceIndex],
-          status: 'archived',
-          temperature: 'frozen',
-          updatedAt: new Date().toISOString()
-        };
-      }
+      storage.updateThread(sourceThread.id, {
+        status: 'archived',
+        temperature: 'frozen'
+      });
     }
-
-    // Save all changes atomically
-    saveData(data);
 
     // Output results
     console.log(chalk.green(`\nMerged "${sourceThread.name}" into "${targetThread.name}"`));

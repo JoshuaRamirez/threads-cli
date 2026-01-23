@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import { getAllThreads } from '@redjay/threads-storage';
 import { Thread, Temperature } from '@redjay/threads-core';
 import { formatTemperature, formatImportanceStars } from '../utils';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 // Temperature order for sorting (hottest first)
@@ -179,7 +179,8 @@ export const agendaCommand = new Command('agenda')
   .option('-w, --week', 'Expand view to 7 days instead of today')
   .option('-a, --all', 'Include all active threads, not just priority items')
   .action((options) => {
-    const threads = getAllThreads();
+    const storage = getStorage();
+    const threads = storage.getAllThreads();
     const { hotThreads, activeInPeriod, needsAttention, otherActive } = categorizeThreads(threads, options);
 
     // Render the agenda

@@ -1,13 +1,14 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@redjay/threads-storage';
 import { Dependency } from '@redjay/threads-core';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 function findThread(identifier: string) {
-  let thread = getThreadById(identifier);
-  if (!thread) thread = getThreadByName(identifier);
+  const storage = getStorage();
+  let thread = storage.getThreadById(identifier);
+  if (!thread) thread = storage.getThreadByName(identifier);
   if (!thread) {
-    const all = getAllThreads();
+    const all = storage.getAllThreads();
     const matches = all.filter(t =>
       t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
       t.name.toLowerCase().includes(identifier.toLowerCase())
@@ -57,13 +58,14 @@ export const dependCommand = new Command('depend')
         return;
       }
 
-      updateThread(thread.id, { dependencies: newDeps });
+      getStorage().updateThread(thread.id, { dependencies: newDeps });
       console.log(chalk.green(`\nRemoved dependency: "${thread.name}" no longer depends on "${target.name}"`));
       console.log('');
       return;
     }
 
     // Check if dependency already exists
+    const storage = getStorage();
     const existing = thread.dependencies.find(d => d.threadId === target.id);
     if (existing) {
       // Update existing dependency
@@ -80,7 +82,7 @@ export const dependCommand = new Command('depend')
         return d;
       });
 
-      updateThread(thread.id, { dependencies: newDeps });
+      storage.updateThread(thread.id, { dependencies: newDeps });
       console.log(chalk.green(`\nUpdated dependency: "${thread.name}" → "${target.name}"`));
     } else {
       // Add new dependency
@@ -92,7 +94,7 @@ export const dependCommand = new Command('depend')
         when: options.when || ''
       };
 
-      updateThread(thread.id, { dependencies: [...thread.dependencies, dep] });
+      storage.updateThread(thread.id, { dependencies: [...thread.dependencies, dep] });
       console.log(chalk.green(`\nAdded dependency: "${thread.name}" → "${target.name}"`));
     }
 

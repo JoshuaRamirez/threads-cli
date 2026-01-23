@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@redjay/threads-storage';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 function parseDateTime(input: string): Date | null {
@@ -30,13 +30,14 @@ export const editProgressCommand = new Command('edit-progress')
   .option('-t, --time <datetime>', 'New timestamp')
   .option('-d, --delete', 'Delete the progress entry')
   .action((threadId: string, indexArg: string, options) => {
+    const storage = getStorage();
     // Find thread
-    let thread = getThreadById(threadId);
+    let thread = storage.getThreadById(threadId);
     if (!thread) {
-      thread = getThreadByName(threadId);
+      thread = storage.getThreadByName(threadId);
     }
     if (!thread) {
-      const all = getAllThreads();
+      const all = storage.getAllThreads();
       const matches = all.filter(t =>
         t.id.toLowerCase().startsWith(threadId.toLowerCase()) ||
         t.name.toLowerCase().includes(threadId.toLowerCase())
@@ -80,7 +81,7 @@ export const editProgressCommand = new Command('edit-progress')
     if (options.delete) {
       const newProgress = [...thread.progress];
       newProgress.splice(index, 1);
-      updateThread(thread.id, { progress: newProgress });
+      storage.updateThread(thread.id, { progress: newProgress });
       console.log(chalk.green(`\nDeleted progress entry from "${thread.name}":`));
       console.log(chalk.dim(`  [${new Date(entry.timestamp).toLocaleString()}] ${entry.note}`));
       console.log('');
@@ -111,7 +112,7 @@ export const editProgressCommand = new Command('edit-progress')
       newProgress[index] = { ...newProgress[index], timestamp: parsed.toISOString() };
     }
 
-    updateThread(thread.id, { progress: newProgress });
+    storage.updateThread(thread.id, { progress: newProgress });
 
     const updated = newProgress[index];
     console.log(chalk.green(`\nUpdated progress entry in "${thread.name}":`));

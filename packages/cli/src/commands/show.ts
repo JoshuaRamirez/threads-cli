@@ -1,29 +1,30 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, getContainerById, getContainerByName, getAllContainers, isContainer } from '@redjay/threads-storage';
 import { formatThreadDetail, formatContainerDetail } from '../utils';
+import { getStorage } from '../context';
 import { Entity, Thread, Container } from '@redjay/threads-core';
 import chalk from 'chalk';
 
 function findEntity(identifier: string): Entity | undefined {
+  const storage = getStorage();
   // Try exact ID match first (threads)
-  let entity: Entity | undefined = getThreadById(identifier);
+  let entity: Entity | undefined = storage.getThreadById(identifier);
   if (entity) return entity;
 
   // Try exact ID match (containers)
-  entity = getContainerById(identifier);
+  entity = storage.getContainerById(identifier);
   if (entity) return entity;
 
   // Try name match (threads)
-  entity = getThreadByName(identifier);
+  entity = storage.getThreadByName(identifier);
   if (entity) return entity;
 
   // Try name match (containers)
-  entity = getContainerByName(identifier);
+  entity = storage.getContainerByName(identifier);
   if (entity) return entity;
 
   // Try partial ID match across all entities
-  const allThreads = getAllThreads();
-  const allContainers = getAllContainers();
+  const allThreads = storage.getAllThreads();
+  const allContainers = storage.getAllContainers();
   const all: Entity[] = [...allThreads, ...allContainers];
 
   const idMatches = all.filter(e => e.id.toLowerCase().startsWith(identifier.toLowerCase()));
@@ -38,8 +39,9 @@ function findEntity(identifier: string): Entity | undefined {
 }
 
 function findAllMatches(identifier: string): Entity[] {
-  const allThreads = getAllThreads();
-  const allContainers = getAllContainers();
+  const storage = getStorage();
+  const allThreads = storage.getAllThreads();
+  const allContainers = storage.getAllContainers();
   const all: Entity[] = [...allThreads, ...allContainers];
 
   // Check ID matches first
@@ -61,7 +63,7 @@ export const showCommand = new Command('show')
       if (matches.length > 1) {
         console.log(chalk.yellow(`Multiple entities match "${identifier}":`));
         matches.forEach(e => {
-          const type = isContainer(e) ? chalk.magenta('container') : chalk.green('thread');
+          const type = getStorage().isContainer(e) ? chalk.magenta('container') : chalk.green('thread');
           console.log(`  ${e.id.slice(0, 8)} - ${e.name} (${type})`);
         });
         return;
@@ -71,7 +73,7 @@ export const showCommand = new Command('show')
     }
 
     console.log('');
-    if (isContainer(entity)) {
+    if (getStorage().isContainer(entity)) {
       console.log(formatContainerDetail(entity as Container));
     } else {
       console.log(formatThreadDetail(entity as Thread));

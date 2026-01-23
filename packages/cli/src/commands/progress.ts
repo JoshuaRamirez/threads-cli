@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@redjay/threads-storage';
 import { ProgressEntry } from '@redjay/threads-core';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 function parseDateTime(input: string): Date | null {
@@ -32,12 +32,13 @@ export const progressCommand = new Command('progress')
   .option('--hot', 'Also set temperature to hot')
   .option('--at <datetime>', 'Set custom timestamp (e.g., "2026-01-10 3pm", "yesterday")')
   .action((identifier: string, note: string, options) => {
-    let thread = getThreadById(identifier);
+    const storage = getStorage();
+    let thread = storage.getThreadById(identifier);
     if (!thread) {
-      thread = getThreadByName(identifier);
+      thread = storage.getThreadByName(identifier);
     }
     if (!thread) {
-      const all = getAllThreads();
+      const all = storage.getAllThreads();
       const matches = all.filter(t =>
         t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
         t.name.toLowerCase().includes(identifier.toLowerCase())
@@ -85,7 +86,7 @@ export const progressCommand = new Command('progress')
       updates.temperature = 'warm';
     }
 
-    updateThread(thread.id, updates);
+    storage.updateThread(thread.id, updates);
 
     console.log(chalk.green(`\nProgress added to "${thread.name}":`));
     console.log(`  [${new Date(entry.timestamp).toLocaleString()}] ${note}`);

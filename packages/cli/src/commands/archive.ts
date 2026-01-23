@@ -1,13 +1,14 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@redjay/threads-storage';
 import { Thread } from '@redjay/threads-core';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 function findThread(identifier: string) {
-  let thread = getThreadById(identifier);
-  if (!thread) thread = getThreadByName(identifier);
+  const storage = getStorage();
+  let thread = storage.getThreadById(identifier);
+  if (!thread) thread = storage.getThreadByName(identifier);
   if (!thread) {
-    const all = getAllThreads();
+    const all = storage.getAllThreads();
     const matches = all.filter(t =>
       t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
       t.name.toLowerCase().includes(identifier.toLowerCase())
@@ -24,7 +25,8 @@ interface Descendant {
 
 // Collect all descendant threads recursively
 function collectDescendants(parentId: string, depth: number = 0): Descendant[] {
-  const threads = getAllThreads();
+  const storage = getStorage();
+  const threads = storage.getAllThreads();
   const descendants: Descendant[] = [];
 
   const children = threads.filter(t => t.parentId === parentId);
@@ -100,8 +102,9 @@ export const archiveCommand = new Command('archive')
         return;
       }
 
+      const storage = getStorage();
       for (const t of archived) {
-        updateThread(t.id, {
+        storage.updateThread(t.id, {
           status: 'active',
           temperature: 'tepid'
         });
@@ -115,8 +118,9 @@ export const archiveCommand = new Command('archive')
         return;
       }
 
+      const storage = getStorage();
       for (const t of active) {
-        updateThread(t.id, {
+        storage.updateThread(t.id, {
           status: 'archived',
           temperature: 'frozen'
         });

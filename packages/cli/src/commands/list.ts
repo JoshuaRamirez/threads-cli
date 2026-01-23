@@ -1,12 +1,13 @@
 import { Command, Option } from 'commander';
-import { getAllThreads, getAllGroups, getGroupById, getAllContainers, getAllEntities, getEntityById } from '@redjay/threads-storage';
 import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Entity, Container } from '@redjay/threads-core';
 import { formatThreadSummary, buildTree, renderTree } from '../utils';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 // Find entity by id, name, or partial match
 function findEntity(identifier: string): Entity | undefined {
-  const entities = getAllEntities();
+  const storage = getStorage();
+  const entities = storage.getAllEntities();
   let entity = entities.find(e => e.id === identifier);
   if (!entity) entity = entities.find(e => e.name.toLowerCase() === identifier.toLowerCase());
   if (!entity) {
@@ -21,13 +22,14 @@ function findEntity(identifier: string): Entity | undefined {
 
 // Get ancestry path from root to entity
 function getAncestryPath(entity: Entity): Entity[] {
+  const storage = getStorage();
   const path: Entity[] = [];
   let current: Entity | undefined = entity;
 
   while (current) {
     path.unshift(current);
     if (current.parentId) {
-      current = getEntityById(current.parentId);
+      current = storage.getEntityById(current.parentId);
     } else {
       break;
     }
@@ -40,7 +42,8 @@ function getAncestryPath(entity: Entity): Entity[] {
 function getDescendants(entityId: string, maxDepth: number = Infinity, currentDepth: number = 0): Entity[] {
   if (currentDepth >= maxDepth) return [];
 
-  const entities = getAllEntities();
+  const storage = getStorage();
+  const entities = storage.getAllEntities();
   const children = entities.filter(e => e.parentId === entityId);
   const descendants: Entity[] = [];
 
@@ -56,7 +59,8 @@ function getDescendants(entityId: string, maxDepth: number = Infinity, currentDe
 
 // Get siblings (entities with same parent)
 function getSiblings(entity: Entity): Entity[] {
-  const entities = getAllEntities();
+  const storage = getStorage();
+  const entities = storage.getAllEntities();
   return entities.filter(e => e.parentId === entity.parentId && e.id !== entity.id);
 }
 
@@ -124,8 +128,9 @@ function renderSubtree(root: Entity, descendants: Entity[], depth: number): stri
 
 // Render ancestry path as breadcrumb
 function renderPath(path: Entity[]): string[] {
+  const storage = getStorage();
   const lines: string[] = [];
-  const groups = getAllGroups();
+  const groups = storage.getAllGroups();
 
   // Find group name if first entity has groupId
   const firstEntity = path[0];
@@ -196,7 +201,7 @@ export const listCommand = new Command('list')
           return;
         }
 
-        const parent = entity.parentId ? getEntityById(entity.parentId) : null;
+        const parent = entity.parentId ? getStorage().getEntityById(entity.parentId) : null;
         if (parent) {
           console.log(chalk.dim(`Siblings under ${parent.name}:`));
         } else {
@@ -224,7 +229,7 @@ export const listCommand = new Command('list')
           console.log('');
           return;
         }
-        const parent = getEntityById(entity.parentId);
+        const parent = getStorage().getEntityById(entity.parentId);
         if (!parent) {
           console.log(chalk.red('Parent not found'));
           return;
@@ -243,7 +248,8 @@ export const listCommand = new Command('list')
     }
 
     // Original full list behavior
-    let threads = getAllThreads();
+    const storage = getStorage();
+    let threads = storage.getAllThreads();
 
     // Coalesce --temp and --temperature aliases
     const temperatureFilter = options.temp || options.temperature;
@@ -273,7 +279,7 @@ export const listCommand = new Command('list')
       threads = threads.filter(t => t.importance >= options.importance);
     }
     if (options.group) {
-      const groups = getAllGroups();
+      const groups = storage.getAllGroups();
       const group = groups.find(g => g.name.toLowerCase() === options.group.toLowerCase());
       if (group) {
         threads = threads.filter(t => t.groupId === group.id);
@@ -320,8 +326,8 @@ export const listCommand = new Command('list')
       });
     } else {
       // Tree view (default)
-      const groups = getAllGroups();
-      const containers = getAllContainers();
+      const groups = storage.getAllGroups();
+      const containers = storage.getAllContainers();
       // Filter containers by group if group filter is active
       let filteredContainers = containers;
       if (options.group) {

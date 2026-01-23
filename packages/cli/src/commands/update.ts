@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@redjay/threads-storage';
 import { Thread, ThreadStatus, Temperature, ThreadSize, Importance } from '@redjay/threads-core';
 import { formatStatus, formatTemperature, formatSize, formatImportance } from '../utils';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 const validStatuses: ThreadStatus[] = ['active', 'paused', 'stopped', 'completed', 'archived'];
@@ -9,10 +9,11 @@ const validTemps: Temperature[] = ['frozen', 'freezing', 'cold', 'tepid', 'warm'
 const validSizes: ThreadSize[] = ['tiny', 'small', 'medium', 'large', 'huge'];
 
 function findThread(identifier: string): Thread | undefined {
-  let thread = getThreadById(identifier);
-  if (!thread) thread = getThreadByName(identifier);
+  const storage = getStorage();
+  let thread = storage.getThreadById(identifier);
+  if (!thread) thread = storage.getThreadByName(identifier);
   if (!thread) {
-    const all = getAllThreads();
+    const all = storage.getAllThreads();
     const matches = all.filter(t =>
       t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
       t.name.toLowerCase().includes(identifier.toLowerCase())
@@ -167,7 +168,7 @@ export const updateCommand = new Command('update')
       return;
     }
 
-    updateThread(thread.id, updates);
+    getStorage().updateThread(thread.id, updates);
 
     console.log(chalk.green(`\nUpdated "${thread.name}":`));
     for (const change of changes) {

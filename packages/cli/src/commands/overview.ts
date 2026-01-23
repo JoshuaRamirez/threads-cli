@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getAllThreads, getAllGroups, getGroupById } from '@redjay/threads-storage';
 import { Thread, Group, Temperature } from '@redjay/threads-core';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 // Calculate days since a given ISO date string
@@ -35,9 +35,10 @@ export const overviewCommand = new Command('overview')
   .description('Display a personal dashboard overview of threads')
   .option('-d, --days <n>', 'Days threshold for recent/cold (default: 7)', parseInt)
   .action((options) => {
+    const storage = getStorage();
     const daysThreshold = options.days || 7;
-    const threads = getAllThreads();
-    const groups = getAllGroups();
+    const threads = storage.getAllThreads();
+    const groups = storage.getAllGroups();
 
     // Filter out archived threads for the overview
     const activeThreads = threads.filter(t => t.status !== 'archived');

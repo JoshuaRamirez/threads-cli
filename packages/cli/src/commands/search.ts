@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getAllThreads } from '@redjay/threads-storage';
 import { Thread } from '@redjay/threads-core';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 export type SearchScope = 'name' | 'progress' | 'details' | 'tags' | 'all';
@@ -165,7 +165,8 @@ export const searchCommand = new Command('search')
       return;
     }
 
-    const threads = getAllThreads();
+    const storage = getStorage();
+    const threads = storage.getAllThreads();
     const results: SearchMatch[] = [];
 
     for (const thread of threads) {

@@ -1,21 +1,22 @@
 import { Command } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { getThreadById, getThreadByName, getAllThreads, updateThread } from '@redjay/threads-storage';
 import { Thread, DetailsEntry } from '@redjay/threads-core';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 // Helper to find a thread by identifier (ID, name, or partial match)
 function findThread(identifier: string): Thread | undefined {
+  const storage = getStorage();
   // Try exact ID match first
-  let thread = getThreadById(identifier);
+  let thread = storage.getThreadById(identifier);
   if (thread) return thread;
 
   // Try name match
-  thread = getThreadByName(identifier);
+  thread = storage.getThreadByName(identifier);
   if (thread) return thread;
 
   // Try partial ID match
-  const all = getAllThreads();
+  const all = storage.getAllThreads();
   const idMatches = all.filter(t => t.id.toLowerCase().startsWith(identifier.toLowerCase()));
   if (idMatches.length === 1) return idMatches[0];
 
@@ -28,7 +29,8 @@ function findThread(identifier: string): Thread | undefined {
 
 // Show multiple matches to help user disambiguate
 function showMultipleMatches(identifier: string): boolean {
-  const all = getAllThreads();
+  const storage = getStorage();
+  const all = storage.getAllThreads();
   const idMatches = all.filter(t => t.id.toLowerCase().startsWith(identifier.toLowerCase()));
   if (idMatches.length > 1) {
     console.log(chalk.yellow(`Multiple threads match "${identifier}":`));
@@ -129,7 +131,7 @@ export const detailsCommand = new Command('details')
 
       // Add to details array (keep history)
       const updatedDetails = [...details, newEntry];
-      updateThread(thread.id, { details: updatedDetails });
+      getStorage().updateThread(thread.id, { details: updatedDetails });
 
       console.log(chalk.green(`\nDetails updated for "${thread.name}"\n`));
       return;

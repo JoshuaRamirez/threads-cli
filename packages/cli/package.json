@@ -49,6 +49,7 @@
   "homepage": "https://github.com/joshuaramirez/threads-cli#readme",
   "dependencies": {
     "@redjay/threads-core": "workspace:*",
+    "@redjay/threads-json-storage": "workspace:*",
     "@redjay/threads-storage": "workspace:*",
     "chalk": "^4.1.2",
     "commander": "^14.0.2",

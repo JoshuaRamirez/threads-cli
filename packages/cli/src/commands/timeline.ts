@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { getAllThreads, getThreadById, getThreadByName } from '@redjay/threads-storage';
 import { Thread, ProgressEntry } from '@redjay/threads-core';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 export interface TimelineEntry {
@@ -92,11 +92,12 @@ export const timelineCommand = new Command('timeline')
   .option('-t, --thread <id>', 'Filter to specific thread (id or name)')
   .option('-r, --reverse', 'Show oldest first instead of newest first')
   .action((options) => {
-    let threads = getAllThreads();
+    const storage = getStorage();
+    let threads = storage.getAllThreads();
 
     // Filter to specific thread if requested
     if (options.thread) {
-      const thread = getThreadById(options.thread) || getThreadByName(options.thread);
+      const thread = storage.getThreadById(options.thread) || storage.getThreadByName(options.thread);
       if (!thread) {
         console.log(chalk.red('Thread "' + options.thread + '" not found'));
         return;

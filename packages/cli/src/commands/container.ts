@@ -1,21 +1,8 @@
 import { Command } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  getAllContainers,
-  getContainerById,
-  getContainerByName,
-  addContainer,
-  updateContainer,
-  deleteContainer,
-  getAllGroups,
-  getGroupByName,
-  getAllThreads,
-  getAllEntities,
-  updateThread,
-  deleteThread
-} from '@redjay/threads-storage';
 import { Container, Entity, Thread } from '@redjay/threads-core';
 import { formatContainerDetail } from '../utils';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 import * as readline from 'readline';
 
@@ -26,8 +13,9 @@ interface Descendant {
 
 // Collect all descendants recursively with depth info
 function collectDescendants(parentId: string, depth: number = 0): Descendant[] {
-  const threads = getAllThreads();
-  const containers = getAllContainers();
+  const storage = getStorage();
+  const threads = storage.getAllThreads();
+  const containers = storage.getAllContainers();
   const descendants: Descendant[] = [];
 
   // Direct children
@@ -81,18 +69,20 @@ async function confirmAction(message: string): Promise<boolean> {
 
 // Delete entity (thread or container)
 function deleteEntity(entity: Entity): void {
+  const storage = getStorage();
   if (entity.type === 'container') {
-    deleteContainer(entity.id);
+    storage.deleteContainer(entity.id);
   } else {
-    deleteThread(entity.id);
+    storage.deleteThread(entity.id);
   }
 }
 
 function findContainer(identifier: string): Container | undefined {
-  let container = getContainerById(identifier);
-  if (!container) container = getContainerByName(identifier);
+  const storage = getStorage();
+  let container = storage.getContainerById(identifier);
+  if (!container) container = storage.getContainerByName(identifier);
   if (!container) {
-    const all = getAllContainers();
+    const all = storage.getAllContainers();
     const matches = all.filter(c =>
       c.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
       c.name.toLowerCase().includes(identifier.toLowerCase())
@@ -103,7 +93,8 @@ function findContainer(identifier: string): Container | undefined {
 }
 
 function findEntity(identifier: string): Entity | undefined {
-  const entities = getAllEntities();
+  const storage = getStorage();
+  const entities = storage.getAllEntities();
   let entity = entities.find(e => e.id === identifier);
   if (!entity) entity = entities.find(e => e.name.toLowerCase() === identifier.toLowerCase());
   if (!entity) {
@@ -131,10 +122,11 @@ export const containerCommand = new Command('container')
   .option('--dry-run', 'Preview what would be affected')
   .option('-f, --force', 'Skip confirmation prompt')
   .action(async (action: string | undefined, args: string[], options) => {
+    const storage = getStorage();
     if (!action || action === 'list') {
-      const containers = getAllContainers();
-      const groups = getAllGroups();
-      const threads = getAllThreads();
+      const containers = storage.getAllContainers();
+      const groups = storage.getAllGroups();
+      const threads = storage.getAllThreads();
 
       if (containers.length === 0) {
         console.log(chalk.dim('\nNo containers defined\n'));
@@ -167,7 +159,7 @@ export const containerCommand = new Command('container')
           return;
         }
 
-        const existing = getContainerByName(name);
+        const existing = storage.getContainerByName(name);
         if (existing) {
           console.log(chalk.red(`Container "${name}" already exists`));
           return;
@@ -175,7 +167,7 @@ export const containerCommand = new Command('container')
 
         let groupId: string | null = null;
         if (options.group) {
-          const group = getGroupByName(options.group);
+          const group = storage.getGroupByName(options.group);
           if (!group) {
             console.log(chalk.red(`Group "${options.group}" not found`));
             return;
@@ -211,7 +203,7 @@ export const containerCommand = new Command('container')
           updatedAt: now
         };
 
-        addContainer(container);
+        storage.addContainer(container);
         console.log(chalk.green(`\nCreated container "${name}" [${container.id.slice(0, 8)}]\n`));
         break;
       }
@@ -258,7 +250,7 @@ export const containerCommand = new Command('container')
           if (options.group === '' || options.group === 'none') {
             updates.groupId = null;
           } else {
-            const group = getGroupByName(options.group);
+            const group = storage.getGroupByName(options.group);
             if (!group) {
               console.log(chalk.red(`Group "${options.group}" not found`));
               return;
@@ -293,12 +285,12 @@ export const containerCommand = new Command('container')
           return;
         }
 
-        updateContainer(container.id, updates);
+        storage.updateContainer(container.id, updates);
 
         // Cascade group change to all descendants
         if (updates.groupId !== undefined) {
-          const allThreads = getAllThreads();
-          const allContainers = getAllContainers();
+          const allThreads = storage.getAllThreads();
+          const allContainers = storage.getAllContainers();
           const newGroupId = updates.groupId;
           let cascadeCount = 0;
 
@@ -306,12 +298,12 @@ export const containerCommand = new Command('container')
           function cascadeGroup(parentId: string): void {
             // Update child threads
             allThreads.filter(t => t.parentId === parentId).forEach(t => {
-              updateThread(t.id, { groupId: newGroupId });
+              storage.updateThread(t.id, { groupId: newGroupId });
               cascadeCount++;
             });
             // Update child containers and recurse
             allContainers.filter(c => c.parentId === parentId).forEach(c => {
-              updateContainer(c.id, { groupId: newGroupId });
+              storage.updateContainer(c.id, { groupId: newGroupId });
               cascadeCount++;
               cascadeGroup(c.id);
             });
@@ -358,7 +350,7 @@ export const containerCommand = new Command('container')
             console.log(chalk.cyan(`\nDry run: Would delete container "${container.name}"\n`));
             return;
           }
-          deleteContainer(container.id);
+          storage.deleteContainer(container.id);
           console.log(chalk.green(`\nDeleted container "${container.name}"\n`));
           break;
         }
@@ -396,7 +388,7 @@ export const containerCommand = new Command('container')
           for (const { entity } of sorted) {
             deleteEntity(entity);
           }
-          deleteContainer(container.id);
+          storage.deleteContainer(container.id);
           console.log(chalk.green(`\nDeleted "${container.name}" and ${descendants.length} descendant(s)\n`));
           break;
         }
@@ -406,12 +398,12 @@ export const containerCommand = new Command('container')
           const directChildren = descendants.filter(d => d.depth === 0);
           const newParentId = container.parentId || null;
           const newGroupId = container.parentId
-            ? getAllEntities().find(e => e.id === container.parentId)?.groupId || null
+            ? storage.getAllEntities().find(e => e.id === container.parentId)?.groupId || null
             : null;
 
           displayAffectedTree(container, descendants);
           const destLabel = newParentId
-            ? getAllEntities().find(e => e.id === newParentId)?.name || 'parent'
+            ? storage.getAllEntities().find(e => e.id === newParentId)?.name || 'parent'
             : 'ungrouped';
           console.log(chalk.dim(`Children will be moved to: ${destLabel}\n`));
 
@@ -431,12 +423,12 @@ export const containerCommand = new Command('container')
           // Move direct children to container's parent
           for (const { entity } of directChildren) {
             if (entity.type === 'container') {
-              updateContainer(entity.id, { parentId: newParentId, groupId: newGroupId });
+              storage.updateContainer(entity.id, { parentId: newParentId, groupId: newGroupId });
             } else {
-              updateThread(entity.id, { parentId: newParentId, groupId: newGroupId });
+              storage.updateThread(entity.id, { parentId: newParentId, groupId: newGroupId });
             }
           }
-          deleteContainer(container.id);
+          storage.deleteContainer(container.id);
           console.log(chalk.green(`\nOrphaned ${directChildren.length} child(ren) and deleted "${container.name}"\n`));
           break;
         }
@@ -479,12 +471,12 @@ export const containerCommand = new Command('container')
           // Move direct children to target
           for (const { entity } of directChildren) {
             if (entity.type === 'container') {
-              updateContainer(entity.id, { parentId: target.id, groupId: target.groupId });
+              storage.updateContainer(entity.id, { parentId: target.id, groupId: target.groupId });
             } else {
-              updateThread(entity.id, { parentId: target.id, groupId: target.groupId });
+              storage.updateThread(entity.id, { parentId: target.id, groupId: target.groupId });
             }
           }
-          deleteContainer(container.id);
+          storage.deleteContainer(container.id);
           console.log(chalk.green(`\nMoved ${directChildren.length} child(ren) to "${target.name}" and deleted "${container.name}"\n`));
           break;
         }

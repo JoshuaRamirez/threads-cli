@@ -1,15 +1,7 @@
 import { Command, Option } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  getAllThreads,
-  getAllGroups,
-  getThreadById,
-  getThreadByName,
-  getGroupById,
-  getGroupByName,
-  updateThread
-} from '@redjay/threads-storage';
 import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, ProgressEntry } from '@redjay/threads-core';
+import { getStorage } from '../context';
 import chalk from 'chalk';
 
 // Valid values for validation
@@ -31,10 +23,11 @@ interface MatchCriteria {
 
 // Find thread by id, name, or partial match
 function findThread(identifier: string): Thread | undefined {
-  let thread = getThreadById(identifier);
-  if (!thread) thread = getThreadByName(identifier);
+  const storage = getStorage();
+  let thread = storage.getThreadById(identifier);
+  if (!thread) thread = storage.getThreadByName(identifier);
   if (!thread) {
-    const all = getAllThreads();
+    const all = storage.getAllThreads();
     const matches = all.filter(t =>
       t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
       t.name.toLowerCase().includes(identifier.toLowerCase())
@@ -46,10 +39,11 @@ function findThread(identifier: string): Thread | undefined {
 
 // Find group by id, name, or partial match
 function findGroup(identifier: string) {
-  let group = getGroupById(identifier);
-  if (!group) group = getGroupByName(identifier);
+  const storage = getStorage();
+  let group = storage.getGroupById(identifier);
+  if (!group) group = storage.getGroupByName(identifier);
   if (!group) {
-    const all = getAllGroups();
+    const all = storage.getAllGroups();
     const matches = all.filter(g =>
       g.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
       g.name.toLowerCase().includes(identifier.toLowerCase())
@@ -61,7 +55,8 @@ function findGroup(identifier: string) {
 
 // Get all descendants of a thread (recursive)
 function getDescendants(threadId: string): Thread[] {
-  const allThreads = getAllThreads();
+  const storage = getStorage();
+  const allThreads = storage.getAllThreads();
   const descendants: Thread[] = [];
 
   function collectDescendants(parentId: string): void {
@@ -78,7 +73,8 @@ function getDescendants(threadId: string): Thread[] {
 
 // Get direct children of a thread
 function getDirectChildren(threadId: string): Thread[] {
-  return getAllThreads().filter(t => t.parentId === threadId);
+  const storage = getStorage();
+  return storage.getAllThreads().filter(t => t.parentId === threadId);
 }
 
 // Parse importance criteria (e.g., "4", "4+", "3-")
@@ -144,7 +140,8 @@ function matchesCriteria(thread: Thread, criteria: MatchCriteria, matchedIds: Se
 
 // Get threads matching criteria
 function getMatchingThreads(criteria: MatchCriteria): { threads: Thread[]; error?: string } {
-  const allThreads = getAllThreads();
+  const storage = getStorage();
+  const allThreads = storage.getAllThreads();
   let matchedIds = new Set<string>();
   let hasStructuralCriteria = false;
 
@@ -262,6 +259,7 @@ function parseTags(args: string[]): string[] {
 
 // Execute action on a single thread
 function executeAction(thread: Thread, action: BatchAction): { success: boolean; error?: string } {
+  const storage = getStorage();
   try {
     switch (action.type) {
       case 'tag-add': {
@@ -273,7 +271,7 @@ function executeAction(thread: Thread, action: BatchAction): { success: boolean;
             newTags.push(tag);
           }
         }
-        updateThread(thread.id, { tags: newTags });
+        storage.updateThread(thread.id, { tags: newTags });
         return { success: true };
       }
 
@@ -281,7 +279,7 @@ function executeAction(thread: Thread, action: BatchAction): { success: boolean;
         const tagsToRemove = parseTags(action.args);
         const currentTags = thread.tags || [];
         const newTags = currentTags.filter(t => !tagsToRemove.includes(t));
-        updateThread(thread.id, { tags: newTags });
+        storage.updateThread(thread.id, { tags: newTags });
         return { success: true };
       }
 
@@ -326,12 +324,12 @@ function executeAction(thread: Thread, action: BatchAction): { success: boolean;
             return { success: false, error: `Unknown property: ${prop}` };
         }
 
-        updateThread(thread.id, updates);
+        storage.updateThread(thread.id, updates);
         return { success: true };
       }
 
       case 'archive': {
-        updateThread(thread.id, { status: 'archived', temperature: 'frozen' });
+        storage.updateThread(thread.id, { status: 'archived', temperature: 'frozen' });
         return { success: true };
       }
 
@@ -342,7 +340,7 @@ function executeAction(thread: Thread, action: BatchAction): { success: boolean;
           timestamp: new Date().toISOString(),
           note
         };
-        updateThread(thread.id, { progress: [...thread.progress, entry] });
+        storage.updateThread(thread.id, { progress: [...thread.progress, entry] });
         return { success: true };
       }
 
