@@ -114,7 +114,7 @@ export const detailsCommand = new Command('details')
         for await (const chunk of process.stdin) {
           chunks.push(chunk);
         }
-        newContent = Buffer.concat(chunks).toString('utf-8').trim();
+        newContent = Buffer.concat(chunks as unknown as Uint8Array[]).toString('utf-8').trim();
 
         if (!newContent) {
           console.log(chalk.red('No content provided'));

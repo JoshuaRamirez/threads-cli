@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "threads": "./dist/index.js"
+    "threads": "./dist/index.js",
+    "threads-migrate": "./dist/migrate.js"
   },
   "exports": {
     ".": {
@@ -37,14 +38,19 @@
   },
   "dependencies": {
     "@redjay/threads-cli": "workspace:*",
+    "@redjay/threads-core": "workspace:*",
     "@redjay/threads-json-storage": "workspace:*",
     "@redjay/threads-storage": "workspace:*"
   },
   "peerDependencies": {
-    "@redjay/threads-firebase-storage": "workspace:*"
+    "@redjay/threads-firebase-storage": "workspace:*",
+    "firebase-admin": ">=11.0.0"
   },
   "peerDependenciesMeta": {
     "@redjay/threads-firebase-storage": {
+      "optional": true
+    },
+    "firebase-admin": {
       "optional": true
     }
   },
