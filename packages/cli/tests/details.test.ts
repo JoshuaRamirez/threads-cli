@@ -3,18 +3,19 @@
  */
 
 import { Thread } from '@redjay/threads-core';
+import { createMockStorageService, createMockThread, MockStorageService } from './helpers/mockStorage';
 
 // Mock uuid
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'new-details-uuid'),
 }));
 
-// Mock storage module
-jest.mock('@redjay/threads-storage', () => ({
-  getThreadById: jest.fn(),
-  getThreadByName: jest.fn(),
-  getAllThreads: jest.fn(),
-  updateThread: jest.fn(),
+// Create mock storage instance
+let mockStorage: MockStorageService;
+
+// Mock context module to return our mock storage
+jest.mock('../src/context', () => ({
+  getStorage: jest.fn(() => mockStorage),
 }));
 
 // Mock chalk
@@ -28,45 +29,14 @@ jest.mock('chalk', () => ({
   }),
 }));
 
-import {
-  getThreadById,
-  getThreadByName,
-  getAllThreads,
-  updateThread,
-} from '@redjay/threads-storage';
 import { detailsCommand } from '../src/commands/details';
-
-const mockGetThreadById = getThreadById as jest.MockedFunction<typeof getThreadById>;
-const mockGetThreadByName = getThreadByName as jest.MockedFunction<typeof getThreadByName>;
-const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;
-const mockUpdateThread = updateThread as jest.MockedFunction<typeof updateThread>;
-
-function createMockThread(overrides: Partial<Thread> = {}): Thread {
-  return {
-    id: 'test-id-123',
-    name: 'Test Thread',
-    description: '',
-    status: 'active',
-    importance: 3,
-    temperature: 'warm',
-    size: 'medium',
-    parentId: null,
-    groupId: null,
-    tags: [],
-    dependencies: [],
-    progress: [],
-    details: [],
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
 
 describe('detailsCommand', () => {
   let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-06-15T12:00:00.000Z'));
@@ -78,9 +48,9 @@ describe('detailsCommand', () => {
   });
 
   test('details_ThreadNotFound_LogsError', async () => {
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([]);
 
     await detailsCommand.parseAsync(['node', 'test', 'nonexistent']);
 
@@ -89,7 +59,7 @@ describe('detailsCommand', () => {
 
   test('details_NoDetails_ShowsNoDetails', async () => {
     const thread = createMockThread({ id: 't1', name: 'My Thread', details: [] });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await detailsCommand.parseAsync(['node', 'test', 't1']);
 
@@ -102,7 +72,7 @@ describe('detailsCommand', () => {
       name: 'My Thread',
       details: [{ id: 'd1', timestamp: '2024-01-01T00:00:00.000Z', content: 'Current details' }],
     });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await detailsCommand.parseAsync(['node', 'test', 't1']);
 
@@ -111,11 +81,11 @@ describe('detailsCommand', () => {
 
   test('details_SetContent_AddsDetails', async () => {
     const thread = createMockThread({ id: 't1', details: [] });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await detailsCommand.parseAsync(['node', 'test', 't1', 'New details content']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('t1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('t1', {
       details: expect.arrayContaining([
         expect.objectContaining({ content: 'New details content' }),
       ]),
@@ -125,11 +95,11 @@ describe('detailsCommand', () => {
   test('details_AppendToExisting_KeepsHistory', async () => {
     const existingDetail = { id: 'd1', timestamp: '2024-01-01T00:00:00.000Z', content: 'Old' };
     const thread = createMockThread({ id: 't1', details: [existingDetail] });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await detailsCommand.parseAsync(['node', 'test', 't1', 'New content']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('t1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('t1', {
       details: [
         existingDetail,
         expect.objectContaining({ content: 'New content' }),
@@ -147,7 +117,7 @@ describe('detailsCommand', () => {
         { id: 'd3', timestamp: '2024-03-01T00:00:00.000Z', content: 'Version 3' },
       ],
     });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await detailsCommand.parseAsync(['node', 'test', 't1', '--history']);
 
@@ -159,7 +129,7 @@ describe('detailsCommand', () => {
 
   test('details_HistoryEmpty_ShowsNoHistory', async () => {
     const thread = createMockThread({ id: 't1', name: 'My Thread', details: [] });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await detailsCommand.parseAsync(['node', 'test', 't1', '--history']);
 
@@ -167,9 +137,9 @@ describe('detailsCommand', () => {
   });
 
   test('details_MultipleMatches_ShowsAmbiguity', async () => {
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([
       createMockThread({ id: 'abc-1', name: 'Thread ABC 1' }),
       createMockThread({ id: 'abc-2', name: 'Thread ABC 2' }),
     ]);
@@ -181,7 +151,7 @@ describe('detailsCommand', () => {
 
   test('details_Success_LogsSuccess', async () => {
     const thread = createMockThread({ id: 't1', name: 'My Thread' });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await detailsCommand.parseAsync(['node', 'test', 't1', 'New details']);
 

@@ -3,13 +3,14 @@
  */
 
 import { Thread } from '@redjay/threads-core';
+import { createMockStorageService, createMockThread, MockStorageService } from './helpers/mockStorage';
 
-// Mock storage module
-jest.mock('@redjay/threads-storage', () => ({
-  getThreadById: jest.fn(),
-  getThreadByName: jest.fn(),
-  getAllThreads: jest.fn(),
-  updateThread: jest.fn(),
+// Create mock storage instance
+let mockStorage: MockStorageService;
+
+// Mock context module to return our mock storage
+jest.mock('../src/context', () => ({
+  getStorage: jest.fn(() => mockStorage),
 }));
 
 // Mock chalk
@@ -20,45 +21,14 @@ jest.mock('chalk', () => ({
   dim: jest.fn((s: string) => s),
 }));
 
-import {
-  getThreadById,
-  getThreadByName,
-  getAllThreads,
-  updateThread,
-} from '@redjay/threads-storage';
 import { editProgressCommand } from '../src/commands/edit-progress';
-
-const mockGetThreadById = getThreadById as jest.MockedFunction<typeof getThreadById>;
-const mockGetThreadByName = getThreadByName as jest.MockedFunction<typeof getThreadByName>;
-const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;
-const mockUpdateThread = updateThread as jest.MockedFunction<typeof updateThread>;
-
-function createMockThread(overrides: Partial<Thread> = {}): Thread {
-  return {
-    id: 'test-id-123',
-    name: 'Test Thread',
-    description: '',
-    status: 'active',
-    importance: 3,
-    temperature: 'warm',
-    size: 'medium',
-    parentId: null,
-    groupId: null,
-    tags: [],
-    dependencies: [],
-    progress: [],
-    details: [],
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
 
 describe('editProgressCommand', () => {
   let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-06-15T12:00:00.000Z'));
@@ -70,9 +40,9 @@ describe('editProgressCommand', () => {
   });
 
   test('editProgress_ThreadNotFound_LogsError', async () => {
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([]);
 
     await editProgressCommand.parseAsync(['node', 'test', 'nonexistent', '1']);
 
@@ -81,7 +51,7 @@ describe('editProgressCommand', () => {
 
   test('editProgress_NoProgress_LogsError', async () => {
     const thread = createMockThread({ id: 't1', name: 'Thread', progress: [] });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await editProgressCommand.parseAsync(['node', 'test', 't1', '1']);
 
@@ -93,7 +63,7 @@ describe('editProgressCommand', () => {
       id: 't1',
       progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'Note' }],
     });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await editProgressCommand.parseAsync(['node', 'test', 't1', '5']);
 
@@ -105,12 +75,12 @@ describe('editProgressCommand', () => {
       id: 't1',
       progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'First note' }],
     });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await editProgressCommand.parseAsync(['node', 'test', 't1', '1']);
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Current entry'));
-    expect(mockUpdateThread).not.toHaveBeenCalled();
+    expect(mockStorage.updateThread).not.toHaveBeenCalled();
   });
 
   test('editProgress_EditNote_UpdatesNote', async () => {
@@ -118,11 +88,11 @@ describe('editProgressCommand', () => {
       id: 't1',
       progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'Old note' }],
     });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await editProgressCommand.parseAsync(['node', 'test', 't1', '1', '-n', 'New note']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('t1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('t1', {
       progress: expect.arrayContaining([
         expect.objectContaining({ note: 'New note' }),
       ]),
@@ -134,11 +104,11 @@ describe('editProgressCommand', () => {
       id: 't1',
       progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'Note' }],
     });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await editProgressCommand.parseAsync(['node', 'test', 't1', '1', '-t', '2024-06-01T10:00:00.000Z']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('t1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('t1', {
       progress: expect.arrayContaining([
         expect.objectContaining({ timestamp: expect.stringContaining('2024-06-01') }),
       ]),
@@ -150,11 +120,11 @@ describe('editProgressCommand', () => {
       id: 't1',
       progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'Note' }],
     });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await editProgressCommand.parseAsync(['node', 'test', 't1', '1', '-t', 'yesterday']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('t1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('t1', {
       progress: expect.arrayContaining([
         expect.objectContaining({ timestamp: expect.stringContaining('2024-06-14') }),
       ]),
@@ -166,12 +136,12 @@ describe('editProgressCommand', () => {
       id: 't1',
       progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'Note' }],
     });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await editProgressCommand.parseAsync(['node', 'test', 't1', '1', '-t', 'invalid-time']);
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid datetime'));
-    expect(mockUpdateThread).not.toHaveBeenCalled();
+    expect(mockStorage.updateThread).not.toHaveBeenCalled();
   });
 
   test('editProgress_Delete_RemovesEntry', async () => {
@@ -182,11 +152,11 @@ describe('editProgressCommand', () => {
         { id: 'p2', timestamp: '2024-02-01T00:00:00.000Z', note: 'Second' },
       ],
     });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await editProgressCommand.parseAsync(['node', 'test', 't1', '1', '-d']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('t1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('t1', {
       progress: [{ id: 'p2', timestamp: '2024-02-01T00:00:00.000Z', note: 'Second' }],
     });
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Deleted progress'));
@@ -200,11 +170,11 @@ describe('editProgressCommand', () => {
         { id: 'p2', timestamp: '2024-02-01T00:00:00.000Z', note: 'Last' },
       ],
     });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await editProgressCommand.parseAsync(['node', 'test', 't1', 'last', '-n', 'Updated last']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('t1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('t1', {
       progress: expect.arrayContaining([
         expect.objectContaining({ note: 'Updated last' }),
       ]),
@@ -212,9 +182,9 @@ describe('editProgressCommand', () => {
   });
 
   test('editProgress_MultipleMatches_LogsAmbiguity', async () => {
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([
       createMockThread({ id: 'abc-1', name: 'Thread ABC 1' }),
       createMockThread({ id: 'abc-2', name: 'Thread ABC 2' }),
     ]);
@@ -230,11 +200,11 @@ describe('editProgressCommand', () => {
       name: 'Thread',
       progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'Old' }],
     });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await editProgressCommand.parseAsync(['node', 'test', 't1', '1', '-n', 'New note', '-t', 'yesterday']);
 
-    expect(mockUpdateThread).toHaveBeenCalled();
+    expect(mockStorage.updateThread).toHaveBeenCalled();
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Updated progress'));
   });
 });

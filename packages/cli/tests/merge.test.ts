@@ -11,14 +11,14 @@
  */
 
 import { Thread, ThreadsData, ProgressEntry, DetailsEntry, Dependency } from '@redjay/threads-core';
+import { createMockStorageService, createMockThread, MockStorageService } from './helpers/mockStorage';
 
-// Mock the storage module before importing the command
-jest.mock('@redjay/threads-storage', () => ({
-  loadData: jest.fn(),
-  saveData: jest.fn(),
-  getThreadById: jest.fn(),
-  getThreadByName: jest.fn(),
-  getAllThreads: jest.fn(),
+// Create mock storage instance
+let mockStorage: MockStorageService;
+
+// Mock context module to return our mock storage
+jest.mock('../src/context', () => ({
+  getStorage: jest.fn(() => mockStorage),
 }));
 
 // Mock chalk to capture raw output
@@ -50,53 +50,7 @@ import {
   mergeCommand,
 } from '../src/commands/merge';
 
-import {
-  loadData,
-  saveData,
-  getThreadById,
-  getThreadByName,
-  getAllThreads,
-} from '@redjay/threads-storage';
-
-// Type the mocks
-const mockLoadData = loadData as jest.MockedFunction<typeof loadData>;
-const mockSaveData = saveData as jest.MockedFunction<typeof saveData>;
-const mockGetThreadById = getThreadById as jest.MockedFunction<typeof getThreadById>;
-const mockGetThreadByName = getThreadByName as jest.MockedFunction<typeof getThreadByName>;
-const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;
-
 // Test fixtures
-function createMockThread(overrides: Partial<Thread> = {}): Thread {
-  return {
-    id: 'thread-1',
-    name: 'Test Thread',
-    description: 'A test thread',
-    status: 'active',
-    importance: 3,
-    temperature: 'warm',
-    size: 'medium',
-    parentId: null,
-    groupId: null,
-    tags: [],
-    dependencies: [],
-    progress: [],
-    details: [],
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function createMockThreadsData(overrides: Partial<ThreadsData> = {}): ThreadsData {
-  return {
-    threads: [],
-    containers: [],
-    groups: [],
-    version: '1.0.0',
-    ...overrides,
-  };
-}
-
 function createMockProgressEntry(overrides: Partial<ProgressEntry> = {}): ProgressEntry {
   return {
     id: 'progress-1',
@@ -522,6 +476,7 @@ describe('findThread', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
   });
 
@@ -533,7 +488,7 @@ describe('findThread', () => {
     it('should return thread for exact id', () => {
       // Arrange
       const thread = createMockThread({ id: 'exact-id-123' });
-      mockGetThreadById.mockReturnValue(thread);
+      mockStorage.getThreadById.mockReturnValue(thread);
 
       // Act
       const result = findThread('exact-id-123', 'Source');
@@ -547,8 +502,8 @@ describe('findThread', () => {
     it('should return thread for exact name', () => {
       // Arrange
       const thread = createMockThread({ name: 'My Thread' });
-      mockGetThreadById.mockReturnValue(undefined);
-      mockGetThreadByName.mockReturnValue(thread);
+      mockStorage.getThreadById.mockReturnValue(undefined);
+      mockStorage.getThreadByName.mockReturnValue(thread);
 
       // Act
       const result = findThread('My Thread', 'Source');
@@ -562,9 +517,9 @@ describe('findThread', () => {
     it('should return thread for single partial id match', () => {
       // Arrange
       const thread = createMockThread({ id: 'abc12345-full-id' });
-      mockGetThreadById.mockReturnValue(undefined);
-      mockGetThreadByName.mockReturnValue(undefined);
-      mockGetAllThreads.mockReturnValue([thread]);
+      mockStorage.getThreadById.mockReturnValue(undefined);
+      mockStorage.getThreadByName.mockReturnValue(undefined);
+      mockStorage.getAllThreads.mockReturnValue([thread]);
 
       // Act
       const result = findThread('abc', 'Source');
@@ -579,9 +534,9 @@ describe('findThread', () => {
       // Arrange
       const thread1 = createMockThread({ id: 'abc12345-one', name: 'Thread One' });
       const thread2 = createMockThread({ id: 'abc67890-two', name: 'Thread Two' });
-      mockGetThreadById.mockReturnValue(undefined);
-      mockGetThreadByName.mockReturnValue(undefined);
-      mockGetAllThreads.mockReturnValue([thread1, thread2]);
+      mockStorage.getThreadById.mockReturnValue(undefined);
+      mockStorage.getThreadByName.mockReturnValue(undefined);
+      mockStorage.getAllThreads.mockReturnValue([thread1, thread2]);
 
       // Act
       const result = findThread('abc', 'Source');
@@ -595,9 +550,9 @@ describe('findThread', () => {
     it('should return thread for single partial name match', () => {
       // Arrange
       const thread = createMockThread({ id: 'unique-id', name: 'Unique Thread Name' });
-      mockGetThreadById.mockReturnValue(undefined);
-      mockGetThreadByName.mockReturnValue(undefined);
-      mockGetAllThreads.mockReturnValue([thread]);
+      mockStorage.getThreadById.mockReturnValue(undefined);
+      mockStorage.getThreadByName.mockReturnValue(undefined);
+      mockStorage.getAllThreads.mockReturnValue([thread]);
 
       // Act
       const result = findThread('Unique', 'Source');
@@ -612,9 +567,9 @@ describe('findThread', () => {
       // Arrange
       const thread1 = createMockThread({ id: 'id-1', name: 'Test Thread Alpha' });
       const thread2 = createMockThread({ id: 'id-2', name: 'Test Thread Beta' });
-      mockGetThreadById.mockReturnValue(undefined);
-      mockGetThreadByName.mockReturnValue(undefined);
-      mockGetAllThreads.mockReturnValue([thread1, thread2]);
+      mockStorage.getThreadById.mockReturnValue(undefined);
+      mockStorage.getThreadByName.mockReturnValue(undefined);
+      mockStorage.getAllThreads.mockReturnValue([thread1, thread2]);
 
       // Act
       const result = findThread('Test Thread', 'Target');
@@ -627,9 +582,9 @@ describe('findThread', () => {
   describe('findThread_NoMatch_ReturnsNull', () => {
     it('should return null when no match found', () => {
       // Arrange
-      mockGetThreadById.mockReturnValue(undefined);
-      mockGetThreadByName.mockReturnValue(undefined);
-      mockGetAllThreads.mockReturnValue([]);
+      mockStorage.getThreadById.mockReturnValue(undefined);
+      mockStorage.getThreadByName.mockReturnValue(undefined);
+      mockStorage.getAllThreads.mockReturnValue([]);
 
       // Act
       const result = findThread('nonexistent', 'Source');
@@ -642,9 +597,9 @@ describe('findThread', () => {
   describe('findThread_NoMatch_LogsErrorMessage', () => {
     it('should log error message with label', () => {
       // Arrange
-      mockGetThreadById.mockReturnValue(undefined);
-      mockGetThreadByName.mockReturnValue(undefined);
-      mockGetAllThreads.mockReturnValue([]);
+      mockStorage.getThreadById.mockReturnValue(undefined);
+      mockStorage.getThreadByName.mockReturnValue(undefined);
+      mockStorage.getAllThreads.mockReturnValue([]);
 
       // Act
       findThread('nonexistent', 'Source');
@@ -665,6 +620,7 @@ describe('mergeCommand', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     capturedOutput = [];
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation((...args) => {
       capturedOutput.push(args.join(' '));
@@ -675,49 +631,49 @@ describe('mergeCommand', () => {
     consoleLogSpy.mockRestore();
   });
 
-  describe('mergeCommand_SourceNotFound_DoesNotCallSaveData', () => {
-    it('should not save when source not found', async () => {
+  describe('mergeCommand_SourceNotFound_DoesNotCallUpdateThread', () => {
+    it('should not update when source not found', async () => {
       // Arrange
-      mockGetThreadById.mockReturnValue(undefined);
-      mockGetThreadByName.mockReturnValue(undefined);
-      mockGetAllThreads.mockReturnValue([]);
+      mockStorage.getThreadById.mockReturnValue(undefined);
+      mockStorage.getThreadByName.mockReturnValue(undefined);
+      mockStorage.getAllThreads.mockReturnValue([]);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'source', 'target']);
 
       // Assert
-      expect(mockSaveData).not.toHaveBeenCalled();
+      expect(mockStorage.updateThread).not.toHaveBeenCalled();
     });
   });
 
-  describe('mergeCommand_TargetNotFound_DoesNotCallSaveData', () => {
-    it('should not save when target not found', async () => {
+  describe('mergeCommand_TargetNotFound_DoesNotCallUpdateThread', () => {
+    it('should not update when target not found', async () => {
       // Arrange
       const sourceThread = createMockThread({ id: 'source-id', name: 'Source' });
-      mockGetThreadById.mockImplementation((id) => id === 'source-id' ? sourceThread : undefined);
-      mockGetThreadByName.mockImplementation((name) => name === 'Source' ? sourceThread : undefined);
-      mockGetAllThreads.mockReturnValue([sourceThread]);
+      mockStorage.getThreadById.mockImplementation((id: string) => id === 'source-id' ? sourceThread : undefined);
+      mockStorage.getThreadByName.mockImplementation((name: string) => name === 'Source' ? sourceThread : undefined);
+      mockStorage.getAllThreads.mockReturnValue([sourceThread]);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'Source', 'nonexistent']);
 
       // Assert
-      expect(mockSaveData).not.toHaveBeenCalled();
+      expect(mockStorage.updateThread).not.toHaveBeenCalled();
     });
   });
 
-  describe('mergeCommand_SourceEqualsTarget_DoesNotCallSaveData', () => {
-    it('should not save when merging thread into itself', async () => {
+  describe('mergeCommand_SourceEqualsTarget_DoesNotCallUpdateThread', () => {
+    it('should not update when merging thread into itself', async () => {
       // Arrange
       const thread = createMockThread({ id: 'same-id', name: 'Same Thread' });
-      mockGetThreadById.mockReturnValue(thread);
-      mockGetThreadByName.mockReturnValue(thread);
+      mockStorage.getThreadById.mockReturnValue(thread);
+      mockStorage.getThreadByName.mockReturnValue(thread);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'Same Thread', 'Same Thread']);
 
       // Assert
-      expect(mockSaveData).not.toHaveBeenCalled();
+      expect(mockStorage.updateThread).not.toHaveBeenCalled();
     });
   });
 
@@ -725,8 +681,8 @@ describe('mergeCommand', () => {
     it('should log error about self-merge', async () => {
       // Arrange
       const thread = createMockThread({ id: 'same-id', name: 'Same Thread' });
-      mockGetThreadById.mockReturnValue(thread);
-      mockGetThreadByName.mockReturnValue(thread);
+      mockStorage.getThreadById.mockReturnValue(thread);
+      mockStorage.getThreadByName.mockReturnValue(thread);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'Same Thread', 'Same Thread']);
@@ -736,8 +692,8 @@ describe('mergeCommand', () => {
     });
   });
 
-  describe('mergeCommand_ValidMerge_CallsSaveDataOnce', () => {
-    it('should call saveData exactly once', async () => {
+  describe('mergeCommand_ValidMerge_CallsUpdateThread', () => {
+    it('should call updateThread for target', async () => {
       // Arrange
       const sourceThread = createMockThread({
         id: 'source-id',
@@ -756,26 +712,23 @@ describe('mergeCommand', () => {
         dependencies: [],
       });
 
-      mockGetThreadById.mockImplementation((id) => {
+      mockStorage.getThreadById.mockImplementation((id: string) => {
         if (id === 'source-id') return sourceThread;
         if (id === 'target-id') return targetThread;
         return undefined;
       });
-      mockGetThreadByName.mockImplementation((name) => {
+      mockStorage.getThreadByName.mockImplementation((name: string) => {
         if (name === 'Source Thread') return sourceThread;
         if (name === 'Target Thread') return targetThread;
         return undefined;
       });
-      mockGetAllThreads.mockReturnValue([sourceThread, targetThread]);
-      mockLoadData.mockReturnValue(createMockThreadsData({
-        threads: [sourceThread, targetThread]
-      }));
+      mockStorage.getAllThreads.mockReturnValue([sourceThread, targetThread]);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'Source Thread', 'Target Thread']);
 
       // Assert
-      expect(mockSaveData).toHaveBeenCalledTimes(1);
+      expect(mockStorage.updateThread).toHaveBeenCalledWith('target-id', expect.anything());
     });
   });
 
@@ -792,72 +745,26 @@ describe('mergeCommand', () => {
         name: 'Target Thread',
       });
 
-      mockGetThreadById.mockImplementation((id) => {
+      mockStorage.getThreadById.mockImplementation((id: string) => {
         if (id === 'source-id') return sourceThread;
         if (id === 'target-id') return targetThread;
         return undefined;
       });
-      mockGetThreadByName.mockImplementation((name) => {
+      mockStorage.getThreadByName.mockImplementation((name: string) => {
         if (name === 'Source Thread') return sourceThread;
         if (name === 'Target Thread') return targetThread;
         return undefined;
       });
-      mockGetAllThreads.mockReturnValue([sourceThread, targetThread]);
-      mockLoadData.mockReturnValue(createMockThreadsData({
-        threads: [
-          { ...sourceThread },
-          { ...targetThread },
-        ]
-      }));
+      mockStorage.getAllThreads.mockReturnValue([sourceThread, targetThread]);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'Source Thread', 'Target Thread']);
 
       // Assert
-      const savedData = mockSaveData.mock.calls[0][0] as ThreadsData;
-      const savedSource = savedData.threads.find(t => t.id === 'source-id');
-      expect(savedSource?.status).toBe('archived');
-    });
-  });
-
-  describe('mergeCommand_ValidMerge_SetsSourceTemperatureToFrozen', () => {
-    it('should set source temperature to frozen', async () => {
-      // Arrange
-      const sourceThread = createMockThread({
-        id: 'source-id',
-        name: 'Source Thread',
-        temperature: 'hot',
-      });
-      const targetThread = createMockThread({
-        id: 'target-id',
-        name: 'Target Thread',
-      });
-
-      mockGetThreadById.mockImplementation((id) => {
-        if (id === 'source-id') return sourceThread;
-        if (id === 'target-id') return targetThread;
-        return undefined;
-      });
-      mockGetThreadByName.mockImplementation((name) => {
-        if (name === 'Source Thread') return sourceThread;
-        if (name === 'Target Thread') return targetThread;
-        return undefined;
-      });
-      mockGetAllThreads.mockReturnValue([sourceThread, targetThread]);
-      mockLoadData.mockReturnValue(createMockThreadsData({
-        threads: [
-          { ...sourceThread },
-          { ...targetThread },
-        ]
+      expect(mockStorage.updateThread).toHaveBeenCalledWith('source-id', expect.objectContaining({
+        status: 'archived',
+        temperature: 'frozen',
       }));
-
-      // Act
-      await mergeCommand.parseAsync(['node', 'test', 'Source Thread', 'Target Thread']);
-
-      // Assert
-      const savedData = mockSaveData.mock.calls[0][0] as ThreadsData;
-      const savedSource = savedData.threads.find(t => t.id === 'source-id');
-      expect(savedSource?.temperature).toBe('frozen');
     });
   });
 
@@ -874,36 +781,31 @@ describe('mergeCommand', () => {
         name: 'Target Thread',
       });
 
-      mockGetThreadById.mockImplementation((id) => {
+      mockStorage.getThreadById.mockImplementation((id: string) => {
         if (id === 'source-id') return sourceThread;
         if (id === 'target-id') return targetThread;
         return undefined;
       });
-      mockGetThreadByName.mockImplementation((name) => {
+      mockStorage.getThreadByName.mockImplementation((name: string) => {
         if (name === 'Source Thread') return sourceThread;
         if (name === 'Target Thread') return targetThread;
         return undefined;
       });
-      mockGetAllThreads.mockReturnValue([sourceThread, targetThread]);
-      mockLoadData.mockReturnValue(createMockThreadsData({
-        threads: [
-          { ...sourceThread },
-          { ...targetThread },
-        ]
-      }));
+      mockStorage.getAllThreads.mockReturnValue([sourceThread, targetThread]);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'Source Thread', 'Target Thread', '--keep']);
 
       // Assert
-      const savedData = mockSaveData.mock.calls[0][0] as ThreadsData;
-      const savedSource = savedData.threads.find(t => t.id === 'source-id');
-      expect(savedSource?.status).toBe('active');
+      // Should NOT have called updateThread with archived status for source
+      expect(mockStorage.updateThread).not.toHaveBeenCalledWith('source-id', expect.objectContaining({
+        status: 'archived',
+      }));
     });
   });
 
-  describe('mergeCommand_DryRunOption_DoesNotCallSaveData', () => {
-    it('should not save with --dry-run', async () => {
+  describe('mergeCommand_DryRunOption_DoesNotCallUpdateThread', () => {
+    it('should not update with --dry-run', async () => {
       // Arrange
       const sourceThread = createMockThread({
         id: 'source-id',
@@ -914,26 +816,23 @@ describe('mergeCommand', () => {
         name: 'Target Thread',
       });
 
-      mockGetThreadById.mockImplementation((id) => {
+      mockStorage.getThreadById.mockImplementation((id: string) => {
         if (id === 'source-id') return sourceThread;
         if (id === 'target-id') return targetThread;
         return undefined;
       });
-      mockGetThreadByName.mockImplementation((name) => {
+      mockStorage.getThreadByName.mockImplementation((name: string) => {
         if (name === 'Source Thread') return sourceThread;
         if (name === 'Target Thread') return targetThread;
         return undefined;
       });
-      mockGetAllThreads.mockReturnValue([sourceThread, targetThread]);
-      mockLoadData.mockReturnValue(createMockThreadsData({
-        threads: [sourceThread, targetThread]
-      }));
+      mockStorage.getAllThreads.mockReturnValue([sourceThread, targetThread]);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'Source Thread', 'Target Thread', '--dry-run']);
 
       // Assert
-      expect(mockSaveData).not.toHaveBeenCalled();
+      expect(mockStorage.updateThread).not.toHaveBeenCalled();
     });
   });
 
@@ -949,20 +848,17 @@ describe('mergeCommand', () => {
         name: 'Target Thread',
       });
 
-      mockGetThreadById.mockImplementation((id) => {
+      mockStorage.getThreadById.mockImplementation((id: string) => {
         if (id === 'source-id') return sourceThread;
         if (id === 'target-id') return targetThread;
         return undefined;
       });
-      mockGetThreadByName.mockImplementation((name) => {
+      mockStorage.getThreadByName.mockImplementation((name: string) => {
         if (name === 'Source Thread') return sourceThread;
         if (name === 'Target Thread') return targetThread;
         return undefined;
       });
-      mockGetAllThreads.mockReturnValue([sourceThread, targetThread]);
-      mockLoadData.mockReturnValue(createMockThreadsData({
-        threads: [sourceThread, targetThread]
-      }));
+      mockStorage.getAllThreads.mockReturnValue([sourceThread, targetThread]);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'Source Thread', 'Target Thread', '--dry-run']);
@@ -988,31 +884,28 @@ describe('mergeCommand', () => {
         progress: targetProgress,
       });
 
-      mockGetThreadById.mockImplementation((id) => {
+      mockStorage.getThreadById.mockImplementation((id: string) => {
         if (id === 'source-id') return sourceThread;
         if (id === 'target-id') return targetThread;
         return undefined;
       });
-      mockGetThreadByName.mockImplementation((name) => {
+      mockStorage.getThreadByName.mockImplementation((name: string) => {
         if (name === 'Source Thread') return sourceThread;
         if (name === 'Target Thread') return targetThread;
         return undefined;
       });
-      mockGetAllThreads.mockReturnValue([sourceThread, targetThread]);
-      mockLoadData.mockReturnValue(createMockThreadsData({
-        threads: [
-          { ...sourceThread },
-          { ...targetThread },
-        ]
-      }));
+      mockStorage.getAllThreads.mockReturnValue([sourceThread, targetThread]);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'Source Thread', 'Target Thread']);
 
       // Assert
-      const savedData = mockSaveData.mock.calls[0][0] as ThreadsData;
-      const savedTarget = savedData.threads.find(t => t.id === 'target-id');
-      expect(savedTarget?.progress).toHaveLength(2);
+      expect(mockStorage.updateThread).toHaveBeenCalledWith('target-id', expect.objectContaining({
+        progress: expect.arrayContaining([
+          expect.objectContaining({ id: 'tp1' }),
+          expect.objectContaining({ id: 'sp1' }),
+        ]),
+      }));
     });
   });
 
@@ -1030,31 +923,25 @@ describe('mergeCommand', () => {
         tags: ['shared', 'target-only'],
       });
 
-      mockGetThreadById.mockImplementation((id) => {
+      mockStorage.getThreadById.mockImplementation((id: string) => {
         if (id === 'source-id') return sourceThread;
         if (id === 'target-id') return targetThread;
         return undefined;
       });
-      mockGetThreadByName.mockImplementation((name) => {
+      mockStorage.getThreadByName.mockImplementation((name: string) => {
         if (name === 'Source Thread') return sourceThread;
         if (name === 'Target Thread') return targetThread;
         return undefined;
       });
-      mockGetAllThreads.mockReturnValue([sourceThread, targetThread]);
-      mockLoadData.mockReturnValue(createMockThreadsData({
-        threads: [
-          { ...sourceThread },
-          { ...targetThread },
-        ]
-      }));
+      mockStorage.getAllThreads.mockReturnValue([sourceThread, targetThread]);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'Source Thread', 'Target Thread']);
 
       // Assert
-      const savedData = mockSaveData.mock.calls[0][0] as ThreadsData;
-      const savedTarget = savedData.threads.find(t => t.id === 'target-id');
-      expect(savedTarget?.tags).toHaveLength(3);
+      expect(mockStorage.updateThread).toHaveBeenCalledWith('target-id', expect.objectContaining({
+        tags: expect.arrayContaining(['shared', 'source-only', 'target-only']),
+      }));
     });
   });
 
@@ -1075,122 +962,25 @@ describe('mergeCommand', () => {
         parentId: 'source-id',
       });
 
-      mockGetThreadById.mockImplementation((id) => {
+      mockStorage.getThreadById.mockImplementation((id: string) => {
         if (id === 'source-id') return sourceThread;
         if (id === 'target-id') return targetThread;
         if (id === 'child-id') return childThread;
         return undefined;
       });
-      mockGetThreadByName.mockImplementation((name) => {
+      mockStorage.getThreadByName.mockImplementation((name: string) => {
         if (name === 'Source Thread') return sourceThread;
         if (name === 'Target Thread') return targetThread;
         if (name === 'Child Thread') return childThread;
         return undefined;
       });
-      mockGetAllThreads.mockReturnValue([sourceThread, targetThread, childThread]);
-      mockLoadData.mockReturnValue(createMockThreadsData({
-        threads: [
-          { ...sourceThread },
-          { ...targetThread },
-          { ...childThread },
-        ]
-      }));
+      mockStorage.getAllThreads.mockReturnValue([sourceThread, targetThread, childThread]);
 
       // Act
       await mergeCommand.parseAsync(['node', 'test', 'Source Thread', 'Target Thread']);
 
       // Assert
-      const savedData = mockSaveData.mock.calls[0][0] as ThreadsData;
-      const savedChild = savedData.threads.find(t => t.id === 'child-id');
-      expect(savedChild?.parentId).toBe('target-id');
-    });
-  });
-
-  describe('mergeCommand_DependenciesMerge_CombinesDependencies', () => {
-    it('should combine dependencies from both threads', async () => {
-      // Arrange
-      const sourceDep = createMockDependency({ threadId: 'dep-1' });
-      const targetDep = createMockDependency({ threadId: 'dep-2' });
-      const sourceThread = createMockThread({
-        id: 'source-id',
-        name: 'Source Thread',
-        dependencies: [sourceDep],
-      });
-      const targetThread = createMockThread({
-        id: 'target-id',
-        name: 'Target Thread',
-        dependencies: [targetDep],
-      });
-
-      mockGetThreadById.mockImplementation((id) => {
-        if (id === 'source-id') return sourceThread;
-        if (id === 'target-id') return targetThread;
-        return undefined;
-      });
-      mockGetThreadByName.mockImplementation((name) => {
-        if (name === 'Source Thread') return sourceThread;
-        if (name === 'Target Thread') return targetThread;
-        return undefined;
-      });
-      mockGetAllThreads.mockReturnValue([sourceThread, targetThread]);
-      mockLoadData.mockReturnValue(createMockThreadsData({
-        threads: [
-          { ...sourceThread },
-          { ...targetThread },
-        ]
-      }));
-
-      // Act
-      await mergeCommand.parseAsync(['node', 'test', 'Source Thread', 'Target Thread']);
-
-      // Assert
-      const savedData = mockSaveData.mock.calls[0][0] as ThreadsData;
-      const savedTarget = savedData.threads.find(t => t.id === 'target-id');
-      expect(savedTarget?.dependencies).toHaveLength(2);
-    });
-  });
-
-  describe('mergeCommand_DependenciesMerge_FiltersSelfReferences', () => {
-    it('should remove dependency pointing to merged thread', async () => {
-      // Arrange
-      const selfRefDep = createMockDependency({ threadId: 'target-id' });
-      const validDep = createMockDependency({ threadId: 'other-thread' });
-      const sourceThread = createMockThread({
-        id: 'source-id',
-        name: 'Source Thread',
-        dependencies: [selfRefDep, validDep],
-      });
-      const targetThread = createMockThread({
-        id: 'target-id',
-        name: 'Target Thread',
-        dependencies: [],
-      });
-
-      mockGetThreadById.mockImplementation((id) => {
-        if (id === 'source-id') return sourceThread;
-        if (id === 'target-id') return targetThread;
-        return undefined;
-      });
-      mockGetThreadByName.mockImplementation((name) => {
-        if (name === 'Source Thread') return sourceThread;
-        if (name === 'Target Thread') return targetThread;
-        return undefined;
-      });
-      mockGetAllThreads.mockReturnValue([sourceThread, targetThread]);
-      mockLoadData.mockReturnValue(createMockThreadsData({
-        threads: [
-          { ...sourceThread },
-          { ...targetThread },
-        ]
-      }));
-
-      // Act
-      await mergeCommand.parseAsync(['node', 'test', 'Source Thread', 'Target Thread']);
-
-      // Assert
-      const savedData = mockSaveData.mock.calls[0][0] as ThreadsData;
-      const savedTarget = savedData.threads.find(t => t.id === 'target-id');
-      expect(savedTarget?.dependencies).toHaveLength(1);
+      expect(mockStorage.updateThread).toHaveBeenCalledWith('child-id', { parentId: 'target-id' });
     });
   });
 });

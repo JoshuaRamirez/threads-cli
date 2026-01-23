@@ -3,6 +3,7 @@
  */
 
 import { Container, Thread, Group, Entity } from '@redjay/threads-core';
+import { createMockStorageService, createMockThread, createMockContainer, createMockGroup, MockStorageService } from './helpers/mockStorage';
 
 // Mock uuid
 jest.mock('uuid', () => ({
@@ -17,20 +18,12 @@ jest.mock('readline', () => ({
   })),
 }));
 
-// Mock storage module
-jest.mock('@redjay/threads-storage', () => ({
-  getAllContainers: jest.fn(),
-  getContainerById: jest.fn(),
-  getContainerByName: jest.fn(),
-  addContainer: jest.fn(),
-  updateContainer: jest.fn(),
-  deleteContainer: jest.fn(),
-  getAllGroups: jest.fn(),
-  getGroupByName: jest.fn(),
-  getAllThreads: jest.fn(),
-  getAllEntities: jest.fn(),
-  updateThread: jest.fn(),
-  deleteThread: jest.fn(),
+// Create mock storage instance
+let mockStorage: MockStorageService;
+
+// Mock context module to return our mock storage
+jest.mock('../src/context', () => ({
+  getStorage: jest.fn(() => mockStorage),
 }));
 
 // Mock utils
@@ -51,86 +44,14 @@ jest.mock('chalk', () => ({
   blue: jest.fn((s: string) => s),
 }));
 
-import {
-  getAllContainers,
-  getContainerById,
-  getContainerByName,
-  addContainer,
-  updateContainer,
-  deleteContainer,
-  getAllGroups,
-  getGroupByName,
-  getAllThreads,
-  getAllEntities,
-  updateThread,
-} from '@redjay/threads-storage';
 import { containerCommand } from '../src/commands/container';
-
-const mockGetAllContainers = getAllContainers as jest.MockedFunction<typeof getAllContainers>;
-const mockGetContainerById = getContainerById as jest.MockedFunction<typeof getContainerById>;
-const mockGetContainerByName = getContainerByName as jest.MockedFunction<typeof getContainerByName>;
-const mockAddContainer = addContainer as jest.MockedFunction<typeof addContainer>;
-const mockUpdateContainer = updateContainer as jest.MockedFunction<typeof updateContainer>;
-const mockDeleteContainer = deleteContainer as jest.MockedFunction<typeof deleteContainer>;
-const mockGetAllGroups = getAllGroups as jest.MockedFunction<typeof getAllGroups>;
-const mockGetGroupByName = getGroupByName as jest.MockedFunction<typeof getGroupByName>;
-const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;
-const mockGetAllEntities = getAllEntities as jest.MockedFunction<typeof getAllEntities>;
-const mockUpdateThread = updateThread as jest.MockedFunction<typeof updateThread>;
-
-function createMockContainer(overrides: Partial<Container> = {}): Container {
-  return {
-    type: 'container',
-    id: 'container-123',
-    name: 'Test Container',
-    description: '',
-    parentId: null,
-    groupId: null,
-    tags: [],
-    details: [],
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function createMockThread(overrides: Partial<Thread> = {}): Thread {
-  return {
-    id: 'thread-123',
-    name: 'Test Thread',
-    description: '',
-    status: 'active',
-    importance: 3,
-    temperature: 'warm',
-    size: 'medium',
-    parentId: null,
-    groupId: null,
-    tags: [],
-    dependencies: [],
-    progress: [],
-    details: [],
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function createMockGroup(overrides: Partial<Group> = {}): Group {
-  return {
-    id: 'group-123',
-    name: 'Test Group',
-    description: '',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
 
 describe('containerCommand', () => {
   let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-06-15T12:00:00.000Z'));
@@ -143,9 +64,9 @@ describe('containerCommand', () => {
 
   describe('list action', () => {
     test('list_NoContainers_LogsNoContainers', async () => {
-      mockGetAllContainers.mockReturnValue([]);
-      mockGetAllGroups.mockReturnValue([]);
-      mockGetAllThreads.mockReturnValue([]);
+      mockStorage.getAllContainers.mockReturnValue([]);
+      mockStorage.getAllGroups.mockReturnValue([]);
+      mockStorage.getAllThreads.mockReturnValue([]);
 
       await containerCommand.parseAsync(['node', 'test']);
 
@@ -153,9 +74,9 @@ describe('containerCommand', () => {
     });
 
     test('list_WithContainers_DisplaysContainers', async () => {
-      mockGetAllContainers.mockReturnValue([createMockContainer()]);
-      mockGetAllGroups.mockReturnValue([]);
-      mockGetAllThreads.mockReturnValue([]);
+      mockStorage.getAllContainers.mockReturnValue([createMockContainer()]);
+      mockStorage.getAllGroups.mockReturnValue([]);
+      mockStorage.getAllThreads.mockReturnValue([]);
 
       await containerCommand.parseAsync(['node', 'test', 'list']);
 
@@ -165,43 +86,43 @@ describe('containerCommand', () => {
 
   describe('new action', () => {
     test('new_ValidName_CreatesContainer', async () => {
-      mockGetContainerByName.mockReturnValue(undefined);
+      mockStorage.getContainerByName.mockReturnValue(undefined);
 
       await containerCommand.parseAsync(['node', 'test', 'new', 'My Container']);
 
-      expect(mockAddContainer).toHaveBeenCalledWith(
+      expect(mockStorage.addContainer).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'My Container', type: 'container' })
       );
     });
 
     test('new_DuplicateName_LogsError', async () => {
-      mockGetContainerByName.mockReturnValue(createMockContainer());
+      mockStorage.getContainerByName.mockReturnValue(createMockContainer());
 
       await containerCommand.parseAsync(['node', 'test', 'new', 'Existing']);
 
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('already exists'));
-      expect(mockAddContainer).not.toHaveBeenCalled();
+      expect(mockStorage.addContainer).not.toHaveBeenCalled();
     });
 
     test('new_WithGroup_SetsGroupId', async () => {
-      mockGetContainerByName.mockReturnValue(undefined);
-      mockGetGroupByName.mockReturnValue(createMockGroup({ id: 'grp-1' }));
+      mockStorage.getContainerByName.mockReturnValue(undefined);
+      mockStorage.getGroupByName.mockReturnValue(createMockGroup({ id: 'grp-1' }));
 
       await containerCommand.parseAsync(['node', 'test', 'new', 'Container', '-g', 'Group']);
 
-      expect(mockAddContainer).toHaveBeenCalledWith(
+      expect(mockStorage.addContainer).toHaveBeenCalledWith(
         expect.objectContaining({ groupId: 'grp-1' })
       );
     });
 
     test('new_WithParent_SetsParentId', async () => {
       const parent = createMockContainer({ id: 'parent-1' });
-      mockGetContainerByName.mockReturnValue(undefined);
-      mockGetAllEntities.mockReturnValue([parent]);
+      mockStorage.getContainerByName.mockReturnValue(undefined);
+      mockStorage.getAllEntities.mockReturnValue([parent]);
 
       await containerCommand.parseAsync(['node', 'test', 'new', 'Container', '-p', 'parent-1']);
 
-      expect(mockAddContainer).toHaveBeenCalledWith(
+      expect(mockStorage.addContainer).toHaveBeenCalledWith(
         expect.objectContaining({ parentId: 'parent-1' })
       );
     });
@@ -216,7 +137,7 @@ describe('containerCommand', () => {
   describe('show action', () => {
     test('show_ValidContainer_DisplaysDetail', async () => {
       const container = createMockContainer({ id: 'c1' });
-      mockGetContainerById.mockReturnValue(container);
+      mockStorage.getContainerById.mockReturnValue(container);
 
       await containerCommand.parseAsync(['node', 'test', 'show', 'c1']);
 
@@ -224,9 +145,9 @@ describe('containerCommand', () => {
     });
 
     test('show_NotFound_LogsError', async () => {
-      mockGetContainerById.mockReturnValue(undefined);
-      mockGetContainerByName.mockReturnValue(undefined);
-      mockGetAllContainers.mockReturnValue([]);
+      mockStorage.getContainerById.mockReturnValue(undefined);
+      mockStorage.getContainerByName.mockReturnValue(undefined);
+      mockStorage.getAllContainers.mockReturnValue([]);
 
       await containerCommand.parseAsync(['node', 'test', 'show', 'nonexistent']);
 
@@ -237,20 +158,20 @@ describe('containerCommand', () => {
   describe('update action', () => {
     test('update_WithDescription_UpdatesDescription', async () => {
       const container = createMockContainer({ id: 'c1' });
-      mockGetContainerById.mockReturnValue(container);
-      mockGetAllThreads.mockReturnValue([]);
-      mockGetAllContainers.mockReturnValue([container]);
+      mockStorage.getContainerById.mockReturnValue(container);
+      mockStorage.getAllThreads.mockReturnValue([]);
+      mockStorage.getAllContainers.mockReturnValue([container]);
 
       await containerCommand.parseAsync(['node', 'test', 'update', 'c1', '-d', 'New desc']);
 
-      expect(mockUpdateContainer).toHaveBeenCalledWith('c1', expect.objectContaining({
+      expect(mockStorage.updateContainer).toHaveBeenCalledWith('c1', expect.objectContaining({
         description: 'New desc',
       }));
     });
 
     test('update_NoUpdates_LogsWarning', async () => {
       const container = createMockContainer({ id: 'c1' });
-      mockGetContainerById.mockReturnValue(container);
+      mockStorage.getContainerById.mockReturnValue(container);
 
       await containerCommand.parseAsync(['node', 'test', 'update', 'c1']);
 
@@ -258,9 +179,9 @@ describe('containerCommand', () => {
     });
 
     test('update_NotFound_LogsError', async () => {
-      mockGetContainerById.mockReturnValue(undefined);
-      mockGetContainerByName.mockReturnValue(undefined);
-      mockGetAllContainers.mockReturnValue([]);
+      mockStorage.getContainerById.mockReturnValue(undefined);
+      mockStorage.getContainerByName.mockReturnValue(undefined);
+      mockStorage.getAllContainers.mockReturnValue([]);
 
       await containerCommand.parseAsync(['node', 'test', 'update', 'nonexistent', '-d', 'desc']);
 
@@ -271,44 +192,44 @@ describe('containerCommand', () => {
   describe('delete action', () => {
     test('delete_NoChildren_DeletesContainer', async () => {
       const container = createMockContainer({ id: 'c1' });
-      mockGetContainerById.mockReturnValue(container);
-      mockGetAllThreads.mockReturnValue([]);
-      mockGetAllContainers.mockReturnValue([container]);
+      mockStorage.getContainerById.mockReturnValue(container);
+      mockStorage.getAllThreads.mockReturnValue([]);
+      mockStorage.getAllContainers.mockReturnValue([container]);
 
       await containerCommand.parseAsync(['node', 'test', 'delete', 'c1']);
 
-      expect(mockDeleteContainer).toHaveBeenCalledWith('c1');
+      expect(mockStorage.deleteContainer).toHaveBeenCalledWith('c1');
     });
 
     test('delete_WithChildren_ShowsOptions', async () => {
       const container = createMockContainer({ id: 'c1' });
       const child = createMockThread({ id: 't1', parentId: 'c1' });
-      mockGetContainerById.mockReturnValue(container);
-      mockGetAllThreads.mockReturnValue([child]);
-      mockGetAllContainers.mockReturnValue([container]);
+      mockStorage.getContainerById.mockReturnValue(container);
+      mockStorage.getAllThreads.mockReturnValue([child]);
+      mockStorage.getAllContainers.mockReturnValue([container]);
 
       await containerCommand.parseAsync(['node', 'test', 'delete', 'c1']);
 
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('has children'));
-      expect(mockDeleteContainer).not.toHaveBeenCalled();
+      expect(mockStorage.deleteContainer).not.toHaveBeenCalled();
     });
 
     test('delete_WithDryRun_DoesNotDelete', async () => {
       const container = createMockContainer({ id: 'c1' });
-      mockGetContainerById.mockReturnValue(container);
-      mockGetAllThreads.mockReturnValue([]);
-      mockGetAllContainers.mockReturnValue([container]);
+      mockStorage.getContainerById.mockReturnValue(container);
+      mockStorage.getAllThreads.mockReturnValue([]);
+      mockStorage.getAllContainers.mockReturnValue([container]);
 
       await containerCommand.parseAsync(['node', 'test', 'delete', 'c1', '--dry-run']);
 
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Dry run'));
-      expect(mockDeleteContainer).not.toHaveBeenCalled();
+      expect(mockStorage.deleteContainer).not.toHaveBeenCalled();
     });
 
     test('delete_NotFound_LogsError', async () => {
-      mockGetContainerById.mockReturnValue(undefined);
-      mockGetContainerByName.mockReturnValue(undefined);
-      mockGetAllContainers.mockReturnValue([]);
+      mockStorage.getContainerById.mockReturnValue(undefined);
+      mockStorage.getContainerByName.mockReturnValue(undefined);
+      mockStorage.getAllContainers.mockReturnValue([]);
 
       await containerCommand.parseAsync(['node', 'test', 'delete', 'nonexistent']);
 

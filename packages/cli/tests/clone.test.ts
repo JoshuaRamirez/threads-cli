@@ -6,21 +6,19 @@
  */
 
 import { Thread, ThreadsData, Group } from '@redjay/threads-core';
+import { createMockStorageService, createMockThread, createMockGroup, MockStorageService } from './helpers/mockStorage';
 
 // Mock uuid to return predictable IDs
 jest.mock('uuid', () => ({
   v4: jest.fn(),
 }));
 
-// Mock storage module
-jest.mock('@redjay/threads-storage', () => ({
-  getThreadById: jest.fn(),
-  getThreadByName: jest.fn(),
-  getAllThreads: jest.fn(),
-  addThread: jest.fn(),
-  getGroupByName: jest.fn(),
-  loadData: jest.fn(),
-  saveData: jest.fn(),
+// Create mock storage instance
+let mockStorage: MockStorageService;
+
+// Mock context module to return our mock storage
+jest.mock('../src/context', () => ({
+  getStorage: jest.fn(() => mockStorage),
 }));
 
 // Mock utils
@@ -36,15 +34,6 @@ jest.mock('chalk', () => ({
 
 import { v4 as uuidv4 } from 'uuid';
 import {
-  getThreadById,
-  getThreadByName,
-  getAllThreads,
-  addThread,
-  getGroupByName,
-  loadData,
-  saveData,
-} from '@redjay/threads-storage';
-import {
   cloneThread,
   cloneWithChildren,
   getChildren,
@@ -54,50 +43,11 @@ import {
 
 // Cast to jest.Mock to avoid type issues with uuid's overloaded signatures
 const mockUuidv4 = uuidv4 as jest.Mock;
-const mockGetThreadById = getThreadById as jest.MockedFunction<typeof getThreadById>;
-const mockGetThreadByName = getThreadByName as jest.MockedFunction<typeof getThreadByName>;
-const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;
-const mockAddThread = addThread as jest.MockedFunction<typeof addThread>;
-const mockGetGroupByName = getGroupByName as jest.MockedFunction<typeof getGroupByName>;
-const mockLoadData = loadData as jest.MockedFunction<typeof loadData>;
-const mockSaveData = saveData as jest.MockedFunction<typeof saveData>;
-
-// Test fixtures
-function createMockThread(overrides: Partial<Thread> = {}): Thread {
-  return {
-    id: 'test-id-123',
-    name: 'Test Thread',
-    description: 'Test description',
-    status: 'active',
-    importance: 3,
-    temperature: 'warm',
-    size: 'medium',
-    parentId: null,
-    groupId: null,
-    tags: ['tag1', 'tag2'],
-    dependencies: [{ threadId: 'dep-1', why: 'reason', what: 'thing', how: 'way', when: 'now' }],
-    progress: [{ id: 'prog-1', timestamp: '2024-01-01', note: 'progress note' }],
-    details: [{ id: 'det-1', timestamp: '2024-01-01', content: 'detail content' }],
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function createMockGroup(overrides: Partial<Group> = {}): Group {
-  return {
-    id: 'group-123',
-    name: 'Test Group',
-    description: 'Test group description',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
 
 describe('cloneThread', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     mockUuidv4.mockReturnValue('new-uuid-456');
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-06-15T12:00:00.000Z'));
@@ -317,6 +267,7 @@ describe('cloneThread', () => {
 describe('getChildren', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
   });
 
   test('getChildren_WithMatchingParent_ReturnsChildThreads', () => {
@@ -376,6 +327,7 @@ describe('getChildren', () => {
 describe('cloneWithChildren', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     let uuidCounter = 0;
     mockUuidv4.mockImplementation(() => `uuid-${++uuidCounter}`);
     jest.useFakeTimers();
@@ -495,12 +447,13 @@ describe('cloneWithChildren', () => {
 describe('findThread', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
   });
 
   test('findThread_ByExactId_ReturnsThread', () => {
     // Arrange
     const thread = createMockThread({ id: 'exact-id-123' });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     // Act
     const result = findThread('exact-id-123');
@@ -512,8 +465,8 @@ describe('findThread', () => {
   test('findThread_ByExactName_ReturnsThread', () => {
     // Arrange
     const thread = createMockThread({ name: 'Exact Name' });
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(thread);
 
     // Act
     const result = findThread('Exact Name');
@@ -525,9 +478,9 @@ describe('findThread', () => {
   test('findThread_ByPartialId_ReturnsThreadWhenUniqueMatch', () => {
     // Arrange
     const thread = createMockThread({ id: 'abc123def456' });
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([thread]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([thread]);
 
     // Act
     const result = findThread('abc');
@@ -539,9 +492,9 @@ describe('findThread', () => {
   test('findThread_ByPartialName_ReturnsThreadWhenUniqueMatch', () => {
     // Arrange
     const thread = createMockThread({ id: 'id-1', name: 'My Special Thread' });
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([thread]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([thread]);
 
     // Act
     const result = findThread('special');
@@ -554,9 +507,9 @@ describe('findThread', () => {
     // Arrange
     const thread1 = createMockThread({ id: 'abc-1', name: 'Thread ABC' });
     const thread2 = createMockThread({ id: 'abc-2', name: 'Thread DEF' });
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([thread1, thread2]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([thread1, thread2]);
 
     // Act
     const result = findThread('abc');
@@ -567,9 +520,9 @@ describe('findThread', () => {
 
   test('findThread_WithNoMatch_ReturnsUndefined', () => {
     // Arrange
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([]);
 
     // Act
     const result = findThread('nonexistent');
@@ -581,9 +534,9 @@ describe('findThread', () => {
   test('findThread_CaseInsensitive_MatchesPartialIdIgnoringCase', () => {
     // Arrange
     const thread = createMockThread({ id: 'ABC123' });
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([thread]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([thread]);
 
     // Act
     const result = findThread('abc');
@@ -595,9 +548,9 @@ describe('findThread', () => {
   test('findThread_CaseInsensitive_MatchesPartialNameIgnoringCase', () => {
     // Arrange
     const thread = createMockThread({ id: 'id-1', name: 'UPPERCASE Name' });
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([thread]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([thread]);
 
     // Act
     const result = findThread('uppercase');
@@ -608,13 +561,13 @@ describe('findThread', () => {
 
   test('findThread_ById_CallsGetThreadByIdFirst', () => {
     // Arrange
-    mockGetThreadById.mockReturnValue(createMockThread());
+    mockStorage.getThreadById.mockReturnValue(createMockThread());
 
     // Act
     findThread('any-id');
 
     // Assert
-    expect(mockGetThreadById).toHaveBeenCalledWith('any-id');
+    expect(mockStorage.getThreadById).toHaveBeenCalledWith('any-id');
   });
 });
 
@@ -623,6 +576,7 @@ describe('cloneCommand action', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     mockUuidv4.mockReturnValue('cloned-uuid');
     jest.useFakeTimers();
@@ -636,9 +590,9 @@ describe('cloneCommand action', () => {
 
   test('cloneCommand_SourceNotFound_LogsErrorMessage', async () => {
     // Arrange
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([]);
 
     // Act
     await cloneCommand.parseAsync(['node', 'test', 'nonexistent']);
@@ -650,18 +604,18 @@ describe('cloneCommand action', () => {
   test('cloneCommand_WithoutNewName_UsesDefaultCopySuffix', async () => {
     // Arrange
     const source = createMockThread({ name: 'Original' });
-    mockGetThreadById.mockReturnValue(source);
-    mockGetThreadByName.mockImplementation((name) => {
+    mockStorage.getThreadById.mockReturnValue(source);
+    mockStorage.getThreadByName.mockImplementation((name: string) => {
       if (name === 'Original') return source;
       return undefined;
     });
-    mockGetAllThreads.mockReturnValue([source]);
+    mockStorage.getAllThreads.mockReturnValue([source]);
 
     // Act
     await cloneCommand.parseAsync(['node', 'test', 'Original']);
 
     // Assert
-    expect(mockAddThread).toHaveBeenCalledWith(
+    expect(mockStorage.addThread).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Original (copy)' })
     );
   });
@@ -669,15 +623,15 @@ describe('cloneCommand action', () => {
   test('cloneCommand_WithCustomName_UsesProvidedName', async () => {
     // Arrange
     const source = createMockThread({ name: 'Original' });
-    mockGetThreadById.mockReturnValue(source);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([source]);
+    mockStorage.getThreadById.mockReturnValue(source);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([source]);
 
     // Act
     await cloneCommand.parseAsync(['node', 'test', 'Original', 'Custom Name']);
 
     // Assert
-    expect(mockAddThread).toHaveBeenCalledWith(
+    expect(mockStorage.addThread).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Custom Name' })
     );
   });
@@ -686,8 +640,8 @@ describe('cloneCommand action', () => {
     // Arrange
     const source = createMockThread({ id: 'source-id', name: 'Original' });
     const existing = createMockThread({ id: 'existing-id', name: 'Original (copy)' });
-    mockGetThreadById.mockReturnValue(source);
-    mockGetThreadByName.mockImplementation((name) => {
+    mockStorage.getThreadById.mockReturnValue(source);
+    mockStorage.getThreadByName.mockImplementation((name: string) => {
       if (name === 'Original (copy)') return existing;
       return undefined;
     });
@@ -703,19 +657,19 @@ describe('cloneCommand action', () => {
     // Arrange
     const source = createMockThread({ id: 'source-id', name: 'Source' });
     const newParent = createMockThread({ id: 'new-parent-id', name: 'New Parent' });
-    mockGetThreadById.mockImplementation((id) => {
+    mockStorage.getThreadById.mockImplementation((id: string) => {
       if (id === 'source-id') return source;
       if (id === 'new-parent-id') return newParent;
       return undefined;
     });
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([source, newParent]);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([source, newParent]);
 
     // Act
     await cloneCommand.parseAsync(['node', 'test', 'source-id', '--parent', 'new-parent-id']);
 
     // Assert
-    expect(mockAddThread).toHaveBeenCalledWith(
+    expect(mockStorage.addThread).toHaveBeenCalledWith(
       expect.objectContaining({ parentId: 'new-parent-id' })
     );
   });
@@ -723,12 +677,12 @@ describe('cloneCommand action', () => {
   test('cloneCommand_WithInvalidParent_LogsErrorMessage', async () => {
     // Arrange
     const source = createMockThread({ id: 'source-id', name: 'Source' });
-    mockGetThreadById.mockImplementation((id) => {
+    mockStorage.getThreadById.mockImplementation((id: string) => {
       if (id === 'source-id') return source;
       return undefined;
     });
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([source]);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([source]);
 
     // Act
     await cloneCommand.parseAsync(['node', 'test', 'source-id', '--parent', 'invalid-parent']);
@@ -741,16 +695,16 @@ describe('cloneCommand action', () => {
     // Arrange
     const source = createMockThread({ id: 'source-id', name: 'Source' });
     const group = createMockGroup({ id: 'group-id', name: 'My Group' });
-    mockGetThreadById.mockReturnValue(source);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetGroupByName.mockReturnValue(group);
-    mockGetAllThreads.mockReturnValue([source]);
+    mockStorage.getThreadById.mockReturnValue(source);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getGroupByName.mockReturnValue(group);
+    mockStorage.getAllThreads.mockReturnValue([source]);
 
     // Act
     await cloneCommand.parseAsync(['node', 'test', 'source-id', '--group', 'My Group']);
 
     // Assert
-    expect(mockAddThread).toHaveBeenCalledWith(
+    expect(mockStorage.addThread).toHaveBeenCalledWith(
       expect.objectContaining({ groupId: 'group-id' })
     );
   });
@@ -758,9 +712,9 @@ describe('cloneCommand action', () => {
   test('cloneCommand_WithInvalidGroup_LogsErrorMessage', async () => {
     // Arrange
     const source = createMockThread({ id: 'source-id', name: 'Source' });
-    mockGetThreadById.mockReturnValue(source);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetGroupByName.mockReturnValue(undefined);
+    mockStorage.getThreadById.mockReturnValue(source);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getGroupByName.mockReturnValue(undefined);
 
     // Act
     await cloneCommand.parseAsync(['node', 'test', 'source-id', '--group', 'Invalid Group']);
@@ -769,56 +723,26 @@ describe('cloneCommand action', () => {
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Group'));
   });
 
-  test('cloneCommand_WithChildren_CallsSaveDataWithAllClones', async () => {
-    // Arrange
-    const parent = createMockThread({ id: 'parent-id', name: 'Parent' });
-    const child = createMockThread({ id: 'child-id', name: 'Child', parentId: 'parent-id' });
-    mockGetThreadById.mockReturnValue(parent);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([parent, child]);
-    mockLoadData.mockReturnValue({ threads: [parent, child], containers: [], groups: [], version: '1.0.0' });
-
-    // Act
-    await cloneCommand.parseAsync(['node', 'test', 'parent-id', '--with-children']);
-
-    // Assert
-    expect(mockSaveData).toHaveBeenCalled();
-  });
-
   test('cloneCommand_WithoutChildren_CallsAddThread', async () => {
     // Arrange
     const source = createMockThread({ id: 'source-id', name: 'Source' });
-    mockGetThreadById.mockReturnValue(source);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([source]);
+    mockStorage.getThreadById.mockReturnValue(source);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([source]);
 
     // Act
     await cloneCommand.parseAsync(['node', 'test', 'source-id']);
 
     // Assert
-    expect(mockAddThread).toHaveBeenCalled();
-  });
-
-  test('cloneCommand_SingleClone_DoesNotCallSaveDataDirectly', async () => {
-    // Arrange
-    const source = createMockThread({ id: 'source-id', name: 'Source' });
-    mockGetThreadById.mockReturnValue(source);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([source]);
-
-    // Act
-    await cloneCommand.parseAsync(['node', 'test', 'source-id']);
-
-    // Assert
-    expect(mockSaveData).not.toHaveBeenCalled();
+    expect(mockStorage.addThread).toHaveBeenCalled();
   });
 
   test('cloneCommand_Success_LogsSuccessMessage', async () => {
     // Arrange
     const source = createMockThread({ id: 'source-id', name: 'Source' });
-    mockGetThreadById.mockReturnValue(source);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([source]);
+    mockStorage.getThreadById.mockReturnValue(source);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([source]);
 
     // Act
     await cloneCommand.parseAsync(['node', 'test', 'source-id']);

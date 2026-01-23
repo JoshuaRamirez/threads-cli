@@ -3,13 +3,14 @@
  */
 
 import { Thread } from '@redjay/threads-core';
+import { createMockStorageService, createMockThread, MockStorageService } from './helpers/mockStorage';
 
-// Mock storage module
-jest.mock('@redjay/threads-storage', () => ({
-  getThreadById: jest.fn(),
-  getThreadByName: jest.fn(),
-  getAllThreads: jest.fn(),
-  updateThread: jest.fn(),
+// Create mock storage instance
+let mockStorage: MockStorageService;
+
+// Mock context module to return our mock storage
+jest.mock('../src/context', () => ({
+  getStorage: jest.fn(() => mockStorage),
 }));
 
 // Mock chalk
@@ -19,45 +20,14 @@ jest.mock('chalk', () => ({
   yellow: jest.fn((s: string) => s),
 }));
 
-import {
-  getThreadById,
-  getThreadByName,
-  getAllThreads,
-  updateThread,
-} from '@redjay/threads-storage';
 import { dependCommand } from '../src/commands/depend';
-
-const mockGetThreadById = getThreadById as jest.MockedFunction<typeof getThreadById>;
-const mockGetThreadByName = getThreadByName as jest.MockedFunction<typeof getThreadByName>;
-const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;
-const mockUpdateThread = updateThread as jest.MockedFunction<typeof updateThread>;
-
-function createMockThread(overrides: Partial<Thread> = {}): Thread {
-  return {
-    id: 'test-id-123',
-    name: 'Test Thread',
-    description: '',
-    status: 'active',
-    importance: 3,
-    temperature: 'warm',
-    size: 'medium',
-    parentId: null,
-    groupId: null,
-    tags: [],
-    dependencies: [],
-    progress: [],
-    details: [],
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
 
 describe('dependCommand', () => {
   let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     consoleSpy = jest.spyOn(console, 'log').mockImplementation();
   });
 
@@ -69,13 +39,13 @@ describe('dependCommand', () => {
     await dependCommand.parseAsync(['node', 'test', 'thread1']);
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Must specify --on'));
-    expect(mockUpdateThread).not.toHaveBeenCalled();
+    expect(mockStorage.updateThread).not.toHaveBeenCalled();
   });
 
   test('depend_SourceNotFound_LogsError', async () => {
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([]);
 
     await dependCommand.parseAsync(['node', 'test', 'nonexistent', '--on', 'target']);
 
@@ -84,9 +54,9 @@ describe('dependCommand', () => {
 
   test('depend_TargetNotFound_LogsError', async () => {
     const source = createMockThread({ id: 'src-1', name: 'Source' });
-    mockGetThreadById.mockImplementation((id) => id === 'src-1' ? source : undefined);
-    mockGetThreadByName.mockImplementation((name) => name === 'Source' ? source : undefined);
-    mockGetAllThreads.mockReturnValue([source]);
+    mockStorage.getThreadById.mockImplementation((id: string) => id === 'src-1' ? source : undefined);
+    mockStorage.getThreadByName.mockImplementation((name: string) => name === 'Source' ? source : undefined);
+    mockStorage.getAllThreads.mockReturnValue([source]);
 
     await dependCommand.parseAsync(['node', 'test', 'src-1', '--on', 'nonexistent']);
 
@@ -96,18 +66,18 @@ describe('dependCommand', () => {
 
   test('depend_SelfDependency_LogsError', async () => {
     const thread = createMockThread({ id: 't1', name: 'Thread' });
-    mockGetThreadById.mockReturnValue(thread);
+    mockStorage.getThreadById.mockReturnValue(thread);
 
     await dependCommand.parseAsync(['node', 'test', 't1', '--on', 't1']);
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('cannot depend on itself'));
-    expect(mockUpdateThread).not.toHaveBeenCalled();
+    expect(mockStorage.updateThread).not.toHaveBeenCalled();
   });
 
   test('depend_AddDependency_AddsToDependencies', async () => {
     const source = createMockThread({ id: 'src-1', name: 'Source', dependencies: [] });
     const target = createMockThread({ id: 'tgt-1', name: 'Target' });
-    mockGetThreadById.mockImplementation((id) => {
+    mockStorage.getThreadById.mockImplementation((id: string) => {
       if (id === 'src-1') return source;
       if (id === 'tgt-1') return target;
       return undefined;
@@ -115,7 +85,7 @@ describe('dependCommand', () => {
 
     await dependCommand.parseAsync(['node', 'test', 'src-1', '--on', 'tgt-1']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('src-1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('src-1', {
       dependencies: expect.arrayContaining([
         expect.objectContaining({ threadId: 'tgt-1' }),
       ]),
@@ -126,7 +96,7 @@ describe('dependCommand', () => {
   test('depend_WithContext_StoresContext', async () => {
     const source = createMockThread({ id: 'src-1', name: 'Source', dependencies: [] });
     const target = createMockThread({ id: 'tgt-1', name: 'Target' });
-    mockGetThreadById.mockImplementation((id) => {
+    mockStorage.getThreadById.mockImplementation((id: string) => {
       if (id === 'src-1') return source;
       if (id === 'tgt-1') return target;
       return undefined;
@@ -140,7 +110,7 @@ describe('dependCommand', () => {
       '--when', 'Before launch',
     ]);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('src-1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('src-1', {
       dependencies: expect.arrayContaining([
         expect.objectContaining({
           threadId: 'tgt-1',
@@ -160,7 +130,7 @@ describe('dependCommand', () => {
       dependencies: [{ threadId: 'tgt-1', why: 'Old', what: '', how: '', when: '' }],
     });
     const target = createMockThread({ id: 'tgt-1', name: 'Target' });
-    mockGetThreadById.mockImplementation((id) => {
+    mockStorage.getThreadById.mockImplementation((id: string) => {
       if (id === 'src-1') return source;
       if (id === 'tgt-1') return target;
       return undefined;
@@ -168,7 +138,7 @@ describe('dependCommand', () => {
 
     await dependCommand.parseAsync(['node', 'test', 'src-1', '--on', 'tgt-1', '--why', 'New reason']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('src-1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('src-1', {
       dependencies: expect.arrayContaining([
         expect.objectContaining({ threadId: 'tgt-1', why: 'New reason' }),
       ]),
@@ -183,7 +153,7 @@ describe('dependCommand', () => {
       dependencies: [{ threadId: 'tgt-1', why: '', what: '', how: '', when: '' }],
     });
     const target = createMockThread({ id: 'tgt-1', name: 'Target' });
-    mockGetThreadById.mockImplementation((id) => {
+    mockStorage.getThreadById.mockImplementation((id: string) => {
       if (id === 'src-1') return source;
       if (id === 'tgt-1') return target;
       return undefined;
@@ -191,14 +161,14 @@ describe('dependCommand', () => {
 
     await dependCommand.parseAsync(['node', 'test', 'src-1', '--on', 'tgt-1', '--remove']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('src-1', { dependencies: [] });
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('src-1', { dependencies: [] });
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Removed dependency'));
   });
 
   test('depend_RemoveNonexistent_LogsWarning', async () => {
     const source = createMockThread({ id: 'src-1', name: 'Source', dependencies: [] });
     const target = createMockThread({ id: 'tgt-1', name: 'Target' });
-    mockGetThreadById.mockImplementation((id) => {
+    mockStorage.getThreadById.mockImplementation((id: string) => {
       if (id === 'src-1') return source;
       if (id === 'tgt-1') return target;
       return undefined;
@@ -207,18 +177,18 @@ describe('dependCommand', () => {
     await dependCommand.parseAsync(['node', 'test', 'src-1', '--on', 'tgt-1', '--remove']);
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('does not depend on'));
-    expect(mockUpdateThread).not.toHaveBeenCalled();
+    expect(mockStorage.updateThread).not.toHaveBeenCalled();
   });
 
   test('depend_ByPartialId_FindsThread', async () => {
     const source = createMockThread({ id: 'abc123-source', name: 'Source', dependencies: [] });
     const target = createMockThread({ id: 'xyz789-target', name: 'Target' });
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([source, target]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([source, target]);
 
     await dependCommand.parseAsync(['node', 'test', 'abc', '--on', 'xyz']);
 
-    expect(mockUpdateThread).toHaveBeenCalled();
+    expect(mockStorage.updateThread).toHaveBeenCalled();
   });
 });

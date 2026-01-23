@@ -10,14 +10,14 @@
 
 import { Command } from 'commander';
 import { ThreadsData, Thread, Group } from '@redjay/threads-core';
+import { createMockStorageService, createMockThread, MockStorageService } from './helpers/mockStorage';
 
-// Mock the storage module before importing the command
-jest.mock('@redjay/threads-storage', () => ({
-  loadData: jest.fn(),
-  loadBackupData: jest.fn(),
-  getBackupInfo: jest.fn(),
-  restoreFromBackup: jest.fn(),
-  getBackupFilePath: jest.fn(),
+// Create mock storage instance
+let mockStorage: MockStorageService;
+
+// Mock context module to return our mock storage
+jest.mock('../src/context', () => ({
+  getStorage: jest.fn(() => mockStorage),
 }));
 
 // Mock chalk to capture raw output
@@ -37,43 +37,8 @@ jest.mock('chalk', () => ({
 }));
 
 import { undoCommand } from '../src/commands/undo';
-import {
-  loadData,
-  loadBackupData,
-  getBackupInfo,
-  restoreFromBackup,
-  getBackupFilePath,
-} from '@redjay/threads-storage';
-
-// Type the mocks
-const mockLoadData = loadData as jest.MockedFunction<typeof loadData>;
-const mockLoadBackupData = loadBackupData as jest.MockedFunction<typeof loadBackupData>;
-const mockGetBackupInfo = getBackupInfo as jest.MockedFunction<typeof getBackupInfo>;
-const mockRestoreFromBackup = restoreFromBackup as jest.MockedFunction<typeof restoreFromBackup>;
-const mockGetBackupFilePath = getBackupFilePath as jest.MockedFunction<typeof getBackupFilePath>;
 
 // Test fixtures
-function createMockThread(overrides: Partial<Thread> = {}): Thread {
-  return {
-    id: 'thread-1',
-    name: 'Test Thread',
-    description: 'A test thread',
-    status: 'active',
-    importance: 3,
-    temperature: 'warm',
-    size: 'medium',
-    parentId: null,
-    groupId: null,
-    tags: [],
-    dependencies: [],
-    progress: [],
-    details: [],
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
 function createMockThreadsData(overrides: Partial<ThreadsData> = {}): ThreadsData {
   return {
     threads: [],
@@ -90,6 +55,7 @@ describe('UndoCommand', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     capturedOutput = [];
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation((...args) => {
       capturedOutput.push(args.join(' '));
@@ -110,7 +76,7 @@ describe('UndoCommand', () => {
   describe('--list option', () => {
     test('UndoCommand_ListOption_DisplaysNoBackupMessageWhenBackupDoesNotExist', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({ exists: false });
+      mockStorage.getBackupInfo.mockReturnValue({ exists: false });
 
       // Act
       await runCommand(['--list']);
@@ -122,13 +88,13 @@ describe('UndoCommand', () => {
     test('UndoCommand_ListOption_DisplaysBackupPathWhenBackupExists', async () => {
       // Arrange
       const backupPath = '/home/user/.threads/threads.backup.json';
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date('2024-01-15T10:30:00.000Z'),
         threadCount: 5,
         groupCount: 2,
       });
-      mockGetBackupFilePath.mockReturnValue(backupPath);
+      mockStorage.getBackupFilePath.mockReturnValue(backupPath);
 
       // Act
       await runCommand(['--list']);
@@ -139,13 +105,13 @@ describe('UndoCommand', () => {
 
     test('UndoCommand_ListOption_DisplaysThreadCountWhenBackupExists', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date('2024-01-15T10:30:00.000Z'),
         threadCount: 5,
         groupCount: 2,
       });
-      mockGetBackupFilePath.mockReturnValue('/path/to/backup');
+      mockStorage.getBackupFilePath.mockReturnValue('/path/to/backup');
 
       // Act
       await runCommand(['--list']);
@@ -156,13 +122,13 @@ describe('UndoCommand', () => {
 
     test('UndoCommand_ListOption_DisplaysGroupCountWhenBackupExists', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date('2024-01-15T10:30:00.000Z'),
         threadCount: 5,
         groupCount: 2,
       });
-      mockGetBackupFilePath.mockReturnValue('/path/to/backup');
+      mockStorage.getBackupFilePath.mockReturnValue('/path/to/backup');
 
       // Act
       await runCommand(['--list']);
@@ -173,26 +139,26 @@ describe('UndoCommand', () => {
 
     test('UndoCommand_ListOption_DoesNotCallRestoreFromBackup', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 1,
         groupCount: 0,
       });
-      mockGetBackupFilePath.mockReturnValue('/path/to/backup');
+      mockStorage.getBackupFilePath.mockReturnValue('/path/to/backup');
 
       // Act
       await runCommand(['--list']);
 
       // Assert
-      expect(mockRestoreFromBackup).not.toHaveBeenCalled();
+      expect(mockStorage.restoreFromBackup).not.toHaveBeenCalled();
     });
   });
 
   describe('--dry-run option', () => {
     test('UndoCommand_DryRunOption_DisplaysNoBackupMessageWhenBackupDoesNotExist', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({ exists: false });
+      mockStorage.getBackupInfo.mockReturnValue({ exists: false });
 
       // Act
       await runCommand(['--dry-run']);
@@ -203,13 +169,13 @@ describe('UndoCommand', () => {
 
     test('UndoCommand_DryRunOption_DisplaysFailedToLoadMessageWhenBackupDataIsNull', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 0,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(undefined);
+      mockStorage.loadBackupData.mockReturnValue(undefined);
 
       // Act
       await runCommand(['--dry-run']);
@@ -226,14 +192,14 @@ describe('UndoCommand', () => {
       const backupData = createMockThreadsData({
         threads: [createMockThread({ id: '1' })],
       });
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 1,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(backupData);
-      mockLoadData.mockReturnValue(currentData);
+      mockStorage.loadBackupData.mockReturnValue(backupData);
+      mockStorage.getAllThreads.mockReturnValue(currentData.threads);
 
       // Act
       await runCommand(['--dry-run']);
@@ -251,14 +217,15 @@ describe('UndoCommand', () => {
       const backupData = createMockThreadsData({
         threads: [],
       });
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 0,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(backupData);
-      mockLoadData.mockReturnValue(currentData);
+      mockStorage.loadBackupData.mockReturnValue(backupData);
+      mockStorage.getAllThreads.mockReturnValue(currentData.threads);
+      mockStorage.getAllGroups.mockReturnValue([]);
 
       // Act
       await runCommand(['--dry-run']);
@@ -276,14 +243,15 @@ describe('UndoCommand', () => {
       const backupData = createMockThreadsData({
         threads: [deletedThread],
       });
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 1,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(backupData);
-      mockLoadData.mockReturnValue(currentData);
+      mockStorage.loadBackupData.mockReturnValue(backupData);
+      mockStorage.getAllThreads.mockReturnValue(currentData.threads);
+      mockStorage.getAllGroups.mockReturnValue([]);
 
       // Act
       await runCommand(['--dry-run']);
@@ -310,14 +278,15 @@ describe('UndoCommand', () => {
       const backupData = createMockThreadsData({
         threads: [backupThread],
       });
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 1,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(backupData);
-      mockLoadData.mockReturnValue(currentData);
+      mockStorage.loadBackupData.mockReturnValue(backupData);
+      mockStorage.getAllThreads.mockReturnValue(currentData.threads);
+      mockStorage.getAllGroups.mockReturnValue([]);
 
       // Act
       await runCommand(['--dry-run']);
@@ -328,32 +297,34 @@ describe('UndoCommand', () => {
 
     test('UndoCommand_DryRunOption_DoesNotCallRestoreFromBackup', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 0,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(createMockThreadsData());
-      mockLoadData.mockReturnValue(createMockThreadsData());
+      mockStorage.loadBackupData.mockReturnValue(createMockThreadsData());
+      mockStorage.getAllThreads.mockReturnValue([]);
+      mockStorage.getAllGroups.mockReturnValue([]);
 
       // Act
       await runCommand(['--dry-run']);
 
       // Assert
-      expect(mockRestoreFromBackup).not.toHaveBeenCalled();
+      expect(mockStorage.restoreFromBackup).not.toHaveBeenCalled();
     });
 
     test('UndoCommand_DryRunOption_DisplaysInstructionToApply', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 0,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(createMockThreadsData());
-      mockLoadData.mockReturnValue(createMockThreadsData());
+      mockStorage.loadBackupData.mockReturnValue(createMockThreadsData());
+      mockStorage.getAllThreads.mockReturnValue([]);
+      mockStorage.getAllGroups.mockReturnValue([]);
 
       // Act
       await runCommand(['--dry-run']);
@@ -366,7 +337,7 @@ describe('UndoCommand', () => {
   describe('restore operation (no flags)', () => {
     test('UndoCommand_Restore_DisplaysNoBackupMessageWhenBackupDoesNotExist', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({ exists: false });
+      mockStorage.getBackupInfo.mockReturnValue({ exists: false });
 
       // Act
       await runCommand([]);
@@ -377,13 +348,13 @@ describe('UndoCommand', () => {
 
     test('UndoCommand_Restore_DisplaysFailedMessageWhenLoadBackupReturnsUndefined', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 0,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(undefined);
+      mockStorage.loadBackupData.mockReturnValue(undefined);
 
       // Act
       await runCommand([]);
@@ -394,34 +365,36 @@ describe('UndoCommand', () => {
 
     test('UndoCommand_Restore_CallsRestoreFromBackupOnce', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 1,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(createMockThreadsData());
-      mockLoadData.mockReturnValue(createMockThreadsData());
-      mockRestoreFromBackup.mockReturnValue(true);
+      mockStorage.loadBackupData.mockReturnValue(createMockThreadsData());
+      mockStorage.getAllThreads.mockReturnValue([]);
+      mockStorage.getAllGroups.mockReturnValue([]);
+      mockStorage.restoreFromBackup.mockReturnValue(true);
 
       // Act
       await runCommand([]);
 
       // Assert
-      expect(mockRestoreFromBackup).toHaveBeenCalledTimes(1);
+      expect(mockStorage.restoreFromBackup).toHaveBeenCalledTimes(1);
     });
 
     test('UndoCommand_Restore_DisplaysSuccessMessageWhenRestoreSucceeds', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 1,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(createMockThreadsData());
-      mockLoadData.mockReturnValue(createMockThreadsData());
-      mockRestoreFromBackup.mockReturnValue(true);
+      mockStorage.loadBackupData.mockReturnValue(createMockThreadsData());
+      mockStorage.getAllThreads.mockReturnValue([]);
+      mockStorage.getAllGroups.mockReturnValue([]);
+      mockStorage.restoreFromBackup.mockReturnValue(true);
 
       // Act
       await runCommand([]);
@@ -432,15 +405,16 @@ describe('UndoCommand', () => {
 
     test('UndoCommand_Restore_DisplaysRedoHintAfterSuccess', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 1,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(createMockThreadsData());
-      mockLoadData.mockReturnValue(createMockThreadsData());
-      mockRestoreFromBackup.mockReturnValue(true);
+      mockStorage.loadBackupData.mockReturnValue(createMockThreadsData());
+      mockStorage.getAllThreads.mockReturnValue([]);
+      mockStorage.getAllGroups.mockReturnValue([]);
+      mockStorage.restoreFromBackup.mockReturnValue(true);
 
       // Act
       await runCommand([]);
@@ -451,15 +425,16 @@ describe('UndoCommand', () => {
 
     test('UndoCommand_Restore_DisplaysFailedMessageWhenRestoreFails', async () => {
       // Arrange
-      mockGetBackupInfo.mockReturnValue({
+      mockStorage.getBackupInfo.mockReturnValue({
         exists: true,
         timestamp: new Date(),
         threadCount: 1,
         groupCount: 0,
       });
-      mockLoadBackupData.mockReturnValue(createMockThreadsData());
-      mockLoadData.mockReturnValue(createMockThreadsData());
-      mockRestoreFromBackup.mockReturnValue(false);
+      mockStorage.loadBackupData.mockReturnValue(createMockThreadsData());
+      mockStorage.getAllThreads.mockReturnValue([]);
+      mockStorage.getAllGroups.mockReturnValue([]);
+      mockStorage.restoreFromBackup.mockReturnValue(false);
 
       // Act
       await runCommand([]);

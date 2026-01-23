@@ -3,13 +3,14 @@
  */
 
 import { Thread } from '@redjay/threads-core';
+import { createMockStorageService, createMockThread, MockStorageService } from './helpers/mockStorage';
 
-// Mock storage module
-jest.mock('@redjay/threads-storage', () => ({
-  getThreadById: jest.fn(),
-  getThreadByName: jest.fn(),
-  getAllThreads: jest.fn(),
-  updateThread: jest.fn(),
+// Create mock storage instance
+let mockStorage: MockStorageService;
+
+// Mock context module to return our mock storage
+jest.mock('../src/context', () => ({
+  getStorage: jest.fn(() => mockStorage),
 }));
 
 // Mock chalk
@@ -24,45 +25,14 @@ jest.mock('chalk', () => ({
   bold: jest.fn((s: string) => s),
 }));
 
-import {
-  getThreadById,
-  getThreadByName,
-  getAllThreads,
-  updateThread,
-} from '@redjay/threads-storage';
 import { archiveCommand } from '../src/commands/archive';
-
-const mockGetThreadById = getThreadById as jest.MockedFunction<typeof getThreadById>;
-const mockGetThreadByName = getThreadByName as jest.MockedFunction<typeof getThreadByName>;
-const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;
-const mockUpdateThread = updateThread as jest.MockedFunction<typeof updateThread>;
-
-function createMockThread(overrides: Partial<Thread> = {}): Thread {
-  return {
-    id: 'test-id-123',
-    name: 'Test Thread',
-    description: 'Test description',
-    status: 'active',
-    importance: 3,
-    temperature: 'warm',
-    size: 'medium',
-    parentId: null,
-    groupId: null,
-    tags: [],
-    dependencies: [],
-    progress: [],
-    details: [],
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
 
 describe('archiveCommand', () => {
   let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     consoleSpy = jest.spyOn(console, 'log').mockImplementation();
   });
 
@@ -71,9 +41,9 @@ describe('archiveCommand', () => {
   });
 
   test('archive_ThreadNotFound_LogsError', async () => {
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([]);
 
     await archiveCommand.parseAsync(['node', 'test', 'nonexistent']);
 
@@ -82,12 +52,12 @@ describe('archiveCommand', () => {
 
   test('archive_ThreadFound_ArchivesThread', async () => {
     const thread = createMockThread({ id: 'thread-1', status: 'active' });
-    mockGetThreadById.mockReturnValue(thread);
-    mockGetAllThreads.mockReturnValue([thread]);
+    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllThreads.mockReturnValue([thread]);
 
     await archiveCommand.parseAsync(['node', 'test', 'thread-1']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('thread-1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('thread-1', {
       status: 'archived',
       temperature: 'frozen',
     });
@@ -95,12 +65,12 @@ describe('archiveCommand', () => {
 
   test('archive_WithRestore_RestoresArchivedThread', async () => {
     const thread = createMockThread({ id: 'thread-1', status: 'archived' });
-    mockGetThreadById.mockReturnValue(thread);
-    mockGetAllThreads.mockReturnValue([thread]);
+    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllThreads.mockReturnValue([thread]);
 
     await archiveCommand.parseAsync(['node', 'test', 'thread-1', '--restore']);
 
-    expect(mockUpdateThread).toHaveBeenCalledWith('thread-1', {
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('thread-1', {
       status: 'active',
       temperature: 'tepid',
     });
@@ -109,42 +79,42 @@ describe('archiveCommand', () => {
   test('archive_WithChildren_ShowsWarningWithoutCascade', async () => {
     const parent = createMockThread({ id: 'parent-1' });
     const child = createMockThread({ id: 'child-1', parentId: 'parent-1' });
-    mockGetThreadById.mockReturnValue(parent);
-    mockGetAllThreads.mockReturnValue([parent, child]);
+    mockStorage.getThreadById.mockReturnValue(parent);
+    mockStorage.getAllThreads.mockReturnValue([parent, child]);
 
     await archiveCommand.parseAsync(['node', 'test', 'parent-1']);
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('sub-thread'));
-    expect(mockUpdateThread).not.toHaveBeenCalled();
+    expect(mockStorage.updateThread).not.toHaveBeenCalled();
   });
 
   test('archive_WithCascade_ArchivesParentAndChildren', async () => {
     const parent = createMockThread({ id: 'parent-1', status: 'active' });
     const child = createMockThread({ id: 'child-1', parentId: 'parent-1', status: 'active' });
-    mockGetThreadById.mockReturnValue(parent);
-    mockGetAllThreads.mockReturnValue([parent, child]);
+    mockStorage.getThreadById.mockReturnValue(parent);
+    mockStorage.getAllThreads.mockReturnValue([parent, child]);
 
     await archiveCommand.parseAsync(['node', 'test', 'parent-1', '--cascade']);
 
-    expect(mockUpdateThread).toHaveBeenCalledTimes(2);
+    expect(mockStorage.updateThread).toHaveBeenCalledTimes(2);
   });
 
   test('archive_WithDryRun_DoesNotArchive', async () => {
     const parent = createMockThread({ id: 'parent-1' });
     const child = createMockThread({ id: 'child-1', parentId: 'parent-1' });
-    mockGetThreadById.mockReturnValue(parent);
-    mockGetAllThreads.mockReturnValue([parent, child]);
+    mockStorage.getThreadById.mockReturnValue(parent);
+    mockStorage.getAllThreads.mockReturnValue([parent, child]);
 
     await archiveCommand.parseAsync(['node', 'test', 'parent-1', '--cascade', '--dry-run']);
 
-    expect(mockUpdateThread).not.toHaveBeenCalled();
+    expect(mockStorage.updateThread).not.toHaveBeenCalled();
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Dry run'));
   });
 
   test('archive_AlreadyArchived_ShowsNoActiveMessage', async () => {
     const thread = createMockThread({ id: 'thread-1', status: 'archived' });
-    mockGetThreadById.mockReturnValue(thread);
-    mockGetAllThreads.mockReturnValue([thread]);
+    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllThreads.mockReturnValue([thread]);
 
     await archiveCommand.parseAsync(['node', 'test', 'thread-1']);
 
@@ -153,8 +123,8 @@ describe('archiveCommand', () => {
 
   test('restore_NotArchived_ShowsNoArchivedMessage', async () => {
     const thread = createMockThread({ id: 'thread-1', status: 'active' });
-    mockGetThreadById.mockReturnValue(thread);
-    mockGetAllThreads.mockReturnValue([thread]);
+    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllThreads.mockReturnValue([thread]);
 
     await archiveCommand.parseAsync(['node', 'test', 'thread-1', '--restore']);
 
@@ -163,12 +133,12 @@ describe('archiveCommand', () => {
 
   test('archive_ByPartialId_FindsThread', async () => {
     const thread = createMockThread({ id: 'abc123def456' });
-    mockGetThreadById.mockReturnValue(undefined);
-    mockGetThreadByName.mockReturnValue(undefined);
-    mockGetAllThreads.mockReturnValue([thread]);
+    mockStorage.getThreadById.mockReturnValue(undefined);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([thread]);
 
     await archiveCommand.parseAsync(['node', 'test', 'abc']);
 
-    expect(mockUpdateThread).toHaveBeenCalled();
+    expect(mockStorage.updateThread).toHaveBeenCalled();
   });
 });

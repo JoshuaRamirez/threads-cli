@@ -1,11 +1,14 @@
 import { Thread, Temperature, Importance } from '@redjay/threads-core';
+import { createMockStorageService, createMockThread, MockStorageService } from './helpers/mockStorage';
 
-// Mock the storage module before importing next.ts
-jest.mock('@redjay/threads-storage', () => ({
-  getAllThreads: jest.fn()
+// Create mock storage instance
+let mockStorage: MockStorageService;
+
+// Mock context module to return our mock storage
+jest.mock('../src/context', () => ({
+  getStorage: jest.fn(() => mockStorage),
 }));
 
-import { getAllThreads } from '@redjay/threads-storage';
 import {
   temperatureScores,
   hoursSince,
@@ -15,8 +18,6 @@ import {
   ScoredThread,
   nextCommand
 } from '../src/commands/next';
-
-const mockedGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;
 
 // Factory for creating test threads with sensible defaults
 function createThread(overrides: Partial<Thread> = {}): Thread {
@@ -434,6 +435,7 @@ describe('scoreThread', () => {
 describe('nextCommand filtering', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
@@ -447,10 +449,10 @@ describe('nextCommand filtering', () => {
       const now = new Date().toISOString();
       const activeThread = createThread({ id: 'active-1', status: 'active', updatedAt: now });
       const pausedThread = createThread({ id: 'paused-1', status: 'paused', updatedAt: now });
-      mockedGetAllThreads.mockReturnValue([activeThread, pausedThread]);
+      mockStorage.getAllThreads.mockReturnValue([activeThread, pausedThread]);
 
       // Act
-      const filtered = mockedGetAllThreads().filter(t => t.status === 'active');
+      const filtered = mockStorage.getAllThreads().filter((t: Thread) => t.status === 'active');
 
       // Assert
       expect(filtered.length).toBe(1);
@@ -463,10 +465,10 @@ describe('nextCommand filtering', () => {
       const now = new Date().toISOString();
       const activeThread = createThread({ id: 'active-1', status: 'active', updatedAt: now });
       const stoppedThread = createThread({ id: 'stopped-1', status: 'stopped', updatedAt: now });
-      mockedGetAllThreads.mockReturnValue([activeThread, stoppedThread]);
+      mockStorage.getAllThreads.mockReturnValue([activeThread, stoppedThread]);
 
       // Act
-      const filtered = mockedGetAllThreads().filter(t => t.status === 'active');
+      const filtered = mockStorage.getAllThreads().filter((t: Thread) => t.status === 'active');
 
       // Assert
       expect(filtered.length).toBe(1);
@@ -479,10 +481,10 @@ describe('nextCommand filtering', () => {
       const now = new Date().toISOString();
       const activeThread = createThread({ id: 'active-1', status: 'active', updatedAt: now });
       const completedThread = createThread({ id: 'completed-1', status: 'completed', updatedAt: now });
-      mockedGetAllThreads.mockReturnValue([activeThread, completedThread]);
+      mockStorage.getAllThreads.mockReturnValue([activeThread, completedThread]);
 
       // Act
-      const filtered = mockedGetAllThreads().filter(t => t.status === 'active');
+      const filtered = mockStorage.getAllThreads().filter((t: Thread) => t.status === 'active');
 
       // Assert
       expect(filtered.length).toBe(1);
@@ -495,10 +497,10 @@ describe('nextCommand filtering', () => {
       const now = new Date().toISOString();
       const activeThread = createThread({ id: 'active-1', status: 'active', updatedAt: now });
       const archivedThread = createThread({ id: 'archived-1', status: 'archived', updatedAt: now });
-      mockedGetAllThreads.mockReturnValue([activeThread, archivedThread]);
+      mockStorage.getAllThreads.mockReturnValue([activeThread, archivedThread]);
 
       // Act
-      const filtered = mockedGetAllThreads().filter(t => t.status === 'active');
+      const filtered = mockStorage.getAllThreads().filter((t: Thread) => t.status === 'active');
 
       // Assert
       expect(filtered.length).toBe(1);
@@ -514,10 +516,10 @@ describe('nextCommand filtering', () => {
         createThread({ id: 'active-2', status: 'active', updatedAt: now }),
         createThread({ id: 'active-3', status: 'active', updatedAt: now })
       ];
-      mockedGetAllThreads.mockReturnValue(threads);
+      mockStorage.getAllThreads.mockReturnValue(threads);
 
       // Act
-      const filtered = mockedGetAllThreads().filter(t => t.status === 'active');
+      const filtered = mockStorage.getAllThreads().filter((t: Thread) => t.status === 'active');
 
       // Assert
       expect(filtered.length).toBe(3);

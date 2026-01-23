@@ -3,12 +3,14 @@
  */
 
 import { Thread, Group } from '@redjay/threads-core';
+import { createMockStorageService, createMockThread, createMockGroup, MockStorageService } from './helpers/mockStorage';
 
-// Mock storage module
-jest.mock('@redjay/threads-storage', () => ({
-  getAllThreads: jest.fn(),
-  getAllGroups: jest.fn(),
-  getGroupById: jest.fn(),
+// Create mock storage instance
+let mockStorage: MockStorageService;
+
+// Mock context module to return our mock storage
+jest.mock('../src/context', () => ({
+  getStorage: jest.fn(() => mockStorage),
 }));
 
 // Mock chalk
@@ -20,49 +22,14 @@ jest.mock('chalk', () => ({
   bold: jest.fn((s: string) => s),
 }));
 
-import { getAllThreads, getAllGroups } from '@redjay/threads-storage';
 import { overviewCommand } from '../src/commands/overview';
-
-const mockGetAllThreads = getAllThreads as jest.MockedFunction<typeof getAllThreads>;
-const mockGetAllGroups = getAllGroups as jest.MockedFunction<typeof getAllGroups>;
-
-function createMockThread(overrides: Partial<Thread> = {}): Thread {
-  return {
-    id: 'test-id-123',
-    name: 'Test Thread',
-    description: '',
-    status: 'active',
-    importance: 3,
-    temperature: 'warm',
-    size: 'medium',
-    parentId: null,
-    groupId: null,
-    tags: [],
-    dependencies: [],
-    progress: [],
-    details: [],
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function createMockGroup(overrides: Partial<Group> = {}): Group {
-  return {
-    id: 'group-123',
-    name: 'Test Group',
-    description: '',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
 
 describe('overviewCommand', () => {
   let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStorage = createMockStorageService();
     consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-06-15T12:00:00.000Z'));
@@ -74,8 +41,8 @@ describe('overviewCommand', () => {
   });
 
   test('overview_NoThreads_ShowsEmptySections', async () => {
-    mockGetAllThreads.mockReturnValue([]);
-    mockGetAllGroups.mockReturnValue([]);
+    mockStorage.getAllThreads.mockReturnValue([]);
+    mockStorage.getAllGroups.mockReturnValue([]);
 
     await overviewCommand.parseAsync(['node', 'test']);
 
@@ -85,8 +52,8 @@ describe('overviewCommand', () => {
 
   test('overview_WithHotThread_ShowsInHotSection', async () => {
     const hotThread = createMockThread({ name: 'Hot Thread', temperature: 'hot' });
-    mockGetAllThreads.mockReturnValue([hotThread]);
-    mockGetAllGroups.mockReturnValue([]);
+    mockStorage.getAllThreads.mockReturnValue([hotThread]);
+    mockStorage.getAllGroups.mockReturnValue([]);
 
     await overviewCommand.parseAsync(['node', 'test']);
 
@@ -98,8 +65,8 @@ describe('overviewCommand', () => {
       name: 'Recent Thread',
       progress: [{ id: 'p1', timestamp: '2024-06-14T12:00:00.000Z', note: 'Made progress' }],
     });
-    mockGetAllThreads.mockReturnValue([recentThread]);
-    mockGetAllGroups.mockReturnValue([]);
+    mockStorage.getAllThreads.mockReturnValue([recentThread]);
+    mockStorage.getAllGroups.mockReturnValue([]);
 
     await overviewCommand.parseAsync(['node', 'test']);
 
@@ -113,8 +80,8 @@ describe('overviewCommand', () => {
       createdAt: '2024-01-01T00:00:00.000Z',
       progress: [{ id: 'p1', timestamp: '2024-01-01T00:00:00.000Z', note: 'Old note' }],
     });
-    mockGetAllThreads.mockReturnValue([coldThread]);
-    mockGetAllGroups.mockReturnValue([]);
+    mockStorage.getAllThreads.mockReturnValue([coldThread]);
+    mockStorage.getAllGroups.mockReturnValue([]);
 
     await overviewCommand.parseAsync(['node', 'test']);
 
@@ -127,8 +94,8 @@ describe('overviewCommand', () => {
       status: 'archived',
       temperature: 'hot',
     });
-    mockGetAllThreads.mockReturnValue([archivedThread]);
-    mockGetAllGroups.mockReturnValue([]);
+    mockStorage.getAllThreads.mockReturnValue([archivedThread]);
+    mockStorage.getAllGroups.mockReturnValue([]);
 
     await overviewCommand.parseAsync(['node', 'test']);
 
@@ -139,8 +106,8 @@ describe('overviewCommand', () => {
   test('overview_WithGroups_ShowsGroupStats', async () => {
     const group = createMockGroup({ id: 'grp-1', name: 'Work' });
     const thread = createMockThread({ name: 'Work Thread', groupId: 'grp-1', temperature: 'hot' });
-    mockGetAllThreads.mockReturnValue([thread]);
-    mockGetAllGroups.mockReturnValue([group]);
+    mockStorage.getAllThreads.mockReturnValue([thread]);
+    mockStorage.getAllGroups.mockReturnValue([group]);
 
     await overviewCommand.parseAsync(['node', 'test']);
 
@@ -154,8 +121,8 @@ describe('overviewCommand', () => {
       createdAt: '2024-06-10T00:00:00.000Z',
       progress: [{ id: 'p1', timestamp: '2024-06-10T00:00:00.000Z', note: 'Note' }],
     });
-    mockGetAllThreads.mockReturnValue([oldThread]);
-    mockGetAllGroups.mockReturnValue([]);
+    mockStorage.getAllThreads.mockReturnValue([oldThread]);
+    mockStorage.getAllGroups.mockReturnValue([]);
 
     // With 3-day threshold, 5-day-old thread should show as cold
     await overviewCommand.parseAsync(['node', 'test', '-d', '3']);
@@ -167,8 +134,8 @@ describe('overviewCommand', () => {
     const activeThread = createMockThread({ status: 'active' });
     const pausedThread = createMockThread({ status: 'paused' });
     const archivedThread = createMockThread({ status: 'archived' });
-    mockGetAllThreads.mockReturnValue([activeThread, pausedThread, archivedThread]);
-    mockGetAllGroups.mockReturnValue([]);
+    mockStorage.getAllThreads.mockReturnValue([activeThread, pausedThread, archivedThread]);
+    mockStorage.getAllGroups.mockReturnValue([]);
 
     await overviewCommand.parseAsync(['node', 'test']);
 
