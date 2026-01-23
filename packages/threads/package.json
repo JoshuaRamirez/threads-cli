@@ -1,0 +1,55 @@
+{
+  "name": "@redjay/threads",
+  "version": "1.0.0",
+  "description": "Entry point composition package for Threads CLI - wires together CLI + storage based on config",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "threads": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "threads",
+    "cli",
+    "productivity",
+    "tracker"
+  ],
+  "author": "Joshua Ramirez",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@redjay/threads-cli": "workspace:*",
+    "@redjay/threads-json-storage": "workspace:*",
+    "@redjay/threads-storage": "workspace:*"
+  },
+  "peerDependencies": {
+    "@redjay/threads-firebase-storage": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@redjay/threads-firebase-storage": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "typescript": "^5.9.3"
+  }
+}
