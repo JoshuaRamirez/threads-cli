@@ -1,0 +1,39 @@
+{
+  "name": "@redjay/threads-json-storage",
+  "version": "1.0.0",
+  "description": "JSON file storage adapter for Threads platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
+  },
+  "keywords": [
+    "threads",
+    "storage",
+    "json"
+  ],
+  "author": "Joshua Ramirez",
+  "license": "MIT",
+  "dependencies": {
+    "@redjay/threads-core": "workspace:*",
+    "@redjay/threads-storage": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3"
+  }
+}
