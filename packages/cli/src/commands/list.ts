@@ -172,6 +172,9 @@ export const listCommand = new Command('list')
   .option('-p, --parent', 'Show parent\'s subtree instead')
   .option('--siblings', 'Show siblings at same level')
   .option('--path', 'Show ancestry breadcrumb to root')
+  .option('-n, --limit <n>', 'Limit number of threads shown', parseInt)
+  .option('--sort <field>', 'Sort by: created, updated, name, temperature, importance (default: temperature)')
+  .option('-r, --reverse', 'Reverse sort order')
   .action((identifier: string | undefined, options) => {
     // If identifier provided, use focused view
     if (identifier) {
@@ -302,18 +305,47 @@ export const listCommand = new Command('list')
       return;
     }
 
-    // Sort: hot first, then by importance, then by updatedAt
+    // Sort threads
+    const sortField = options.sort || 'temperature';
+    const reverseMultiplier = options.reverse ? -1 : 1;
+
     threads.sort((a, b) => {
-      const tempOrder = ['hot', 'warm', 'tepid', 'cold', 'freezing', 'frozen'];
-      const tempDiff = tempOrder.indexOf(a.temperature) - tempOrder.indexOf(b.temperature);
-      if (tempDiff !== 0) return tempDiff;
+      let result = 0;
 
-      if (a.importance !== b.importance) return b.importance - a.importance;
+      switch (sortField) {
+        case 'created':
+          result = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          break;
+        case 'updated':
+          result = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+          break;
+        case 'name':
+          result = a.name.localeCompare(b.name);
+          break;
+        case 'importance':
+          result = b.importance - a.importance;
+          break;
+        case 'temperature':
+        default:
+          // Default: hot first, then by importance, then by updatedAt
+          const tempOrder = ['hot', 'warm', 'tepid', 'cold', 'freezing', 'frozen'];
+          const tempDiff = tempOrder.indexOf(a.temperature) - tempOrder.indexOf(b.temperature);
+          if (tempDiff !== 0) return tempDiff * reverseMultiplier;
+          if (a.importance !== b.importance) return (b.importance - a.importance) * reverseMultiplier;
+          return (new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()) * reverseMultiplier;
+      }
 
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      return result * reverseMultiplier;
     });
 
-    console.log(chalk.bold(`\nThreads (${threads.length}):\n`));
+    // Apply limit if specified
+    const totalCount = threads.length;
+    if (options.limit && options.limit > 0) {
+      threads = threads.slice(0, options.limit);
+    }
+
+    const limitNote = options.limit && totalCount > options.limit ? ` of ${totalCount}` : '';
+    console.log(chalk.bold(`\nThreads (${threads.length}${limitNote}):\n`));
 
     // Determine display mode: tree is default unless --flat is specified
     const useFlat = options.flat && !options.tree;
