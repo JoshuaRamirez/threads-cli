@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`--sort` option for list command** - sort by created, updated, name, temperature, or importance
+- **`-r`/`--reverse` option for list command** - reverse sort order
+
 ## [1.2.0] - 2025-01-22
 
 ### Added
