@@ -10,3 +10,6 @@ coverage/
 
 # pnpm
 pnpm-debug.log*
+
+# TypeScript build info (incremental compilation)
+*.tsbuildinfo

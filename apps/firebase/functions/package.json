@@ -4,7 +4,7 @@
   "description": "Firebase Cloud Functions for Threads platform",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -b",
     "clean": "rm -rf dist",
     "serve": "npm run build && firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
