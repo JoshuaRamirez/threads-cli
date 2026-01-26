@@ -88,26 +88,12 @@ jobs:
 
       - name: Validate package contents
         run: |
-          echo "Validating @redjay/threads-core..."
-          pnpm --filter @redjay/threads-core pack --pack-destination /tmp
-
-          echo "Validating @redjay/threads-storage..."
-          pnpm --filter @redjay/threads-storage pack --pack-destination /tmp
-
-          echo "Validating @redjay/threads-json-storage..."
-          pnpm --filter @redjay/threads-json-storage pack --pack-destination /tmp
-
-          echo "Validating @redjay/threads-firebase-storage..."
-          pnpm --filter @redjay/threads-firebase-storage pack --pack-destination /tmp
-
-          echo "Validating @redjay/threads-cli..."
-          pnpm --filter @redjay/threads-cli pack --pack-destination /tmp
-
-          echo "Validating @redjay/threads-mcp..."
-          pnpm --filter @redjay/threads-mcp pack --pack-destination /tmp
-
-          echo "Validating @redjay/threads..."
-          pnpm --filter @redjay/threads pack --pack-destination /tmp
-
+          for pkg in core storage json-storage firebase-storage cli mcp-server threads; do
+            dir="packages/$pkg"
+            if [ -d "$dir" ]; then
+              echo "Validating $dir..."
+              (cd "$dir" && pnpm pack --pack-destination /tmp)
+            fi
+          done
           echo "All packages validated successfully"
           ls -la /tmp/*.tgz
