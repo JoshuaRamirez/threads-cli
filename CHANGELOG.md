@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **`--sort` option for list command** - sort by created, updated, name, temperature, or importance
 - **`-r`/`--reverse` option for list command** - reverse sort order
+- **MCP server DI pattern** - context/factory modules matching CLI architecture
+
+### Changed
+- **StorageService abstraction** - extracted to storage package with StorageClient and AsyncStorageService
+- **Removed CLI client layer** - CLIStorageClient consolidated into shared StorageService
+- **CI/CD workflows** - updated for pnpm monorepo with Turbo orchestration
+- **Package publishing** - added LICENSE and README to all publishable packages
+- **CLAUDE.md** - updated for monorepo architecture
 
 ## [1.2.0] - 2025-01-22
 
@@ -106,7 +114,8 @@ Initial npm package release.
 - JSON storage in `~/.threads/threads.json`
 - Commands: new, list, show, set, progress, spawn, group, groups, delete
 
-[Unreleased]: https://github.com/JoshuaRamirez/threads-cli/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/JoshuaRamirez/threads-cli/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/JoshuaRamirez/threads-cli/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/JoshuaRamirez/threads-cli/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/JoshuaRamirez/threads-cli/compare/v0.9.0...v1.0.0
 [0.9.0]: https://github.com/JoshuaRamirez/threads-cli/compare/v0.8.0...v0.9.0
