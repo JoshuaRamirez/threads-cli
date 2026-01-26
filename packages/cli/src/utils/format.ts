@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Group, Container, Entity } from '@redjay/threads-core';
+import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Group, Container, Entity, Link } from '@redjay/threads-core';
 import { getLabel } from '../config';
 
 // Tree drawing characters (Unicode box-drawing)
@@ -60,10 +60,28 @@ export function formatTags(tags: string[]): string {
   return tags.map(t => chalk.cyan(`#${t}`)).join(' ');
 }
 
+// Format links for display
+export function formatLinks(links: Link[]): string[] {
+  if (!links || links.length === 0) return [];
+  const typeColors: Record<string, (s: string) => string> = {
+    web: chalk.blue,
+    file: chalk.green,
+    thread: chalk.magenta,
+    custom: chalk.yellow,
+  };
+  return links.map(link => {
+    const colorFn = typeColors[link.type] || chalk.white;
+    const typeBadge = colorFn(`[${link.type}]`);
+    const label = link.label ? chalk.bold(link.label) : link.uri;
+    const uriPart = link.label ? ` ${chalk.dim(link.uri)}` : '';
+    return `  ${typeBadge} ${label}${uriPart}`;
+  });
+}
+
 export function formatThreadSummary(thread: Thread): string {
   const lines = [
     `${chalk.bold(thread.name)} ${chalk.gray(`[${thread.id.slice(0, 8)}]`)}`,
-    `  Status: ${formatStatus(thread.status)} | Temp: ${formatTemperature(thread.temperature)} | Size: ${formatSize(thread.size)} | Importance: ${formatImportance(thread.importance)}`
+    `  Status: ${formatStatus(thread.status)} | Temp: ${formatTemperature(thread.temperature ?? 'frozen')} | Size: ${formatSize(thread.size)} | Importance: ${formatImportance(thread.importance)}`
   ];
 
   if (thread.description) {
@@ -79,7 +97,7 @@ export function formatThreadDetail(thread: Thread, progressLimit: number = 5): s
     '',
     `ID:          ${thread.id}`,
     `Status:      ${formatStatus(thread.status)}`,
-    `Temperature: ${formatTemperature(thread.temperature)}`,
+    `Temperature: ${formatTemperature(thread.temperature ?? 'frozen')}`,
     `Size:        ${formatSize(thread.size)}`,
     `Importance:  ${formatImportance(thread.importance)}`,
     `Created:     ${new Date(thread.createdAt).toLocaleString()}`,
@@ -125,6 +143,11 @@ export function formatThreadDetail(thread: Thread, progressLimit: number = 5): s
     });
   }
 
+  if (thread.links && thread.links.length > 0) {
+    lines.push('', chalk.bold('Links:'));
+    lines.push(...formatLinks(thread.links));
+  }
+
   if (thread.progress.length > 0) {
     lines.push('', chalk.bold('Progress:'));
     // Show last N entries (default 5, 0 = all)
@@ -154,7 +177,7 @@ export function formatThreadTreeLine(thread: Thread): string {
   const threadLabel = getLabel('thread');
   const labelPrefix = threadLabel ? chalk.green(threadLabel) + ' ' : '';
   const shortId = chalk.gray(`[${thread.id.slice(0, 8)}]`);
-  const tempLabel = formatTemperature(thread.temperature);
+  const tempLabel = formatTemperature(thread.temperature ?? 'frozen');
   const stars = formatImportanceStars(thread.importance);
   // Show primary tag (first tag) if available
   const primaryTag = thread.tags && thread.tags.length > 0

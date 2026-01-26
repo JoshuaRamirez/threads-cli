@@ -88,6 +88,7 @@ export function createMockThread(overrides: Partial<Thread> = {}): Thread {
     parentId: null,
     groupId: null,
     tags: [],
+    links: [],
     dependencies: [],
     progress: [],
     details: [],

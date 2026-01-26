@@ -8,13 +8,14 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import { Thread, Container, Group, ProgressEntry } from '@redjay/threads-core';
+import { Thread, Container, Group, ProgressEntry, Link } from '@redjay/threads-core';
 import { getStorage } from '../context';
 
 // Reusable schema fragments - defined once to avoid type inference depth issues
 const statusEnum = ['active', 'paused', 'stopped', 'completed', 'archived'] as const;
 const tempEnum = ['frozen', 'freezing', 'cold', 'tepid', 'warm', 'hot'] as const;
 const sizeEnum = ['tiny', 'small', 'medium', 'large', 'huge'] as const;
+const linkTypeEnum = ['web', 'file', 'thread', 'custom'] as const;
 
 // Type helper to bypass MCP SDK's deep type inference
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,7 +31,6 @@ export function registerTools(server: McpServer): void {
       name: z.string().describe('Thread name'),
       description: z.string().optional().describe('Brief thread description'),
       status: z.enum(statusEnum).optional().describe('Initial status (default: active)'),
-      temperature: z.enum(tempEnum).optional().describe('Thread momentum (default: warm)'),
       size: z.enum(sizeEnum).optional().describe('Scope of work (default: medium)'),
       importance: z.number().int().min(1).max(5).optional().describe('Priority level 1-5 (default: 3)'),
       tags: z.array(z.string()).optional().describe('Tags for categorization'),
@@ -63,10 +63,10 @@ export function registerTools(server: McpServer): void {
         name: args.name,
         description: args.description ?? '',
         status: args.status ?? 'active',
-        temperature: args.temperature ?? 'warm',
         size: args.size ?? 'medium',
         importance: (args.importance ?? 3) as 1 | 2 | 3 | 4 | 5,
         tags: args.tags ?? [],
+        links: [],
         parentId: args.parentId ?? null,
         groupId: args.groupId ?? null,
         dependencies: [],
@@ -89,7 +89,6 @@ export function registerTools(server: McpServer): void {
       name: z.string().optional().describe('New name'),
       description: z.string().optional().describe('New description'),
       status: z.enum(statusEnum).optional().describe('New status'),
-      temperature: z.enum(tempEnum).optional().describe('New temperature'),
       size: z.enum(sizeEnum).optional().describe('New size'),
       importance: z.number().int().min(1).max(5).optional().describe('New importance'),
       tags: z.array(z.string()).optional().describe('Replace tags array'),
@@ -290,6 +289,86 @@ export function registerTools(server: McpServer): void {
         return { content: [{ type: 'text' as const, text: `Failed to delete progress from thread: ${args.threadId}` }], isError: true };
       }
       return { content: [{ type: 'text' as const, text: `Deleted progress entry: ${args.progressId}` }] };
+    }
+  );
+
+  // === Link Tools ===
+
+  server.tool(
+    'add_link',
+    'Add a link to a thread',
+    {
+      threadId: z.string().describe('Thread ID to add link to'),
+      uri: z.string().describe('URI (URL, file path, thread ID, etc.)'),
+      type: z.enum(linkTypeEnum).describe('Link type: web, file, thread, custom'),
+      label: z.string().optional().describe('Display label for the link'),
+      description: z.string().optional().describe('Description of the link'),
+    } as SchemaShape,
+    async (args) => {
+      const storage = getStorage();
+      const thread = storage.getThreadById(args.threadId);
+      if (!thread) {
+        return { content: [{ type: 'text' as const, text: `Thread not found: ${args.threadId}` }], isError: true };
+      }
+
+      // Check for duplicate URI
+      const currentLinks: Link[] = thread.links || [];
+      if (currentLinks.some(l => l.uri === args.uri)) {
+        return { content: [{ type: 'text' as const, text: `Link with URI "${args.uri}" already exists` }], isError: true };
+      }
+
+      const link: Link = {
+        id: uuidv4(),
+        uri: args.uri,
+        type: args.type as 'web' | 'file' | 'thread' | 'custom',
+        label: args.label,
+        description: args.description,
+        addedAt: new Date().toISOString(),
+      };
+
+      const updatedLinks = [...currentLinks, link];
+      const success = storage.updateThread(args.threadId, { links: updatedLinks });
+      if (!success) {
+        return { content: [{ type: 'text' as const, text: `Failed to add link to thread: ${args.threadId}` }], isError: true };
+      }
+
+      return { content: [{ type: 'text' as const, text: JSON.stringify(link, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'remove_link',
+    'Remove a link from a thread',
+    {
+      threadId: z.string().describe('Thread ID'),
+      linkId: z.string().describe('Link ID or URI to remove'),
+    } as SchemaShape,
+    async (args) => {
+      const storage = getStorage();
+      const thread = storage.getThreadById(args.threadId);
+      if (!thread) {
+        return { content: [{ type: 'text' as const, text: `Thread not found: ${args.threadId}` }], isError: true };
+      }
+
+      const currentLinks: Link[] = thread.links || [];
+      const linkIndex = currentLinks.findIndex(l =>
+        l.id === args.linkId ||
+        l.uri === args.linkId ||
+        l.id.toLowerCase().startsWith(args.linkId.toLowerCase())
+      );
+
+      if (linkIndex === -1) {
+        return { content: [{ type: 'text' as const, text: `Link not found: ${args.linkId}` }], isError: true };
+      }
+
+      const removedLink = currentLinks[linkIndex];
+      const updatedLinks = currentLinks.filter((_, i) => i !== linkIndex);
+      const success = storage.updateThread(args.threadId, { links: updatedLinks });
+      if (!success) {
+        return { content: [{ type: 'text' as const, text: `Failed to remove link from thread: ${args.threadId}` }], isError: true };
+      }
+
+      return { content: [{ type: 'text' as const, text: `Removed link: ${removedLink.label || removedLink.uri}` }] };
     }
   );
 
@@ -787,7 +866,7 @@ export function registerTools(server: McpServer): void {
           // Sort by importance (desc), then temperature (desc)
           if (a.importance !== b.importance) return b.importance - a.importance;
           const tempOrder = ['hot', 'warm', 'tepid', 'cold', 'freezing', 'frozen'];
-          return tempOrder.indexOf(a.temperature) - tempOrder.indexOf(b.temperature);
+          return tempOrder.indexOf(a.temperature ?? 'frozen') - tempOrder.indexOf(b.temperature ?? 'frozen');
         });
 
       if (threads.length === 0) {

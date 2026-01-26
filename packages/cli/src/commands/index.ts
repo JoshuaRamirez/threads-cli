@@ -23,3 +23,4 @@ export { mergeCommand } from './merge';
 export { updateCommand } from './update';
 export { configCommand } from './config';
 export { containerCommand } from './container';
+export { linkCommand } from './link';

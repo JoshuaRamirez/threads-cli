@@ -35,6 +35,7 @@ import { mergeCommand } from './commands/merge';
 import { configCommand } from './commands/config';
 import { updateCommand } from './commands/update';
 import { containerCommand } from './commands/container';
+import { linkCommand } from './commands/link';
 
 /**
  * Create a fully configured CLI program with the provided storage backend.
@@ -81,6 +82,7 @@ export function createCLI(store: IFileThreadStore): Command {
   program.addCommand(configCommand);
   program.addCommand(updateCommand);
   program.addCommand(containerCommand);
+  program.addCommand(linkCommand);
 
   return program;
 }

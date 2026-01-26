@@ -17,6 +17,7 @@ import {
   Group,
   Entity,
   ThreadsData,
+  computeTemperature,
 } from '@redjay/threads-core';
 import { StorageClient } from './StorageClient';
 
@@ -30,6 +31,17 @@ export class StorageService {
     this.store.setClient(this.client);
   }
 
+  /**
+   * Enrich a thread with computed temperature based on updatedAt.
+   * Temperature is derived, not stored.
+   */
+  private enrichWithTemperature(thread: Thread): Thread {
+    return {
+      ...thread,
+      temperature: computeTemperature(thread.updatedAt),
+    };
+  }
+
   // === Thread Operations ===
 
   getAllThreads(): Thread[] {
@@ -38,7 +50,7 @@ export class StorageService {
     if (this.client.hasError()) {
       throw this.client.error;
     }
-    return this.client.threads;
+    return this.client.threads.map(t => this.enrichWithTemperature(t));
   }
 
   getThreadById(id: string): Thread | undefined {
@@ -47,7 +59,7 @@ export class StorageService {
     if (this.client.hasError()) {
       throw this.client.error;
     }
-    return this.client.thread;
+    return this.client.thread ? this.enrichWithTemperature(this.client.thread) : undefined;
   }
 
   getThreadByName(name: string): Thread | undefined {
@@ -56,7 +68,7 @@ export class StorageService {
     if (this.client.hasError()) {
       throw this.client.error;
     }
-    return this.client.thread;
+    return this.client.thread ? this.enrichWithTemperature(this.client.thread) : undefined;
   }
 
   findThreads(filter: ThreadFilter): Thread[] {
@@ -65,7 +77,7 @@ export class StorageService {
     if (this.client.hasError()) {
       throw this.client.error;
     }
-    return this.client.threads;
+    return this.client.threads.map(t => this.enrichWithTemperature(t));
   }
 
   /**
@@ -98,7 +110,7 @@ export class StorageService {
       }
       throw this.client.error;
     }
-    return this.client.thread;
+    return this.client.thread ? this.enrichWithTemperature(this.client.thread) : undefined;
   }
 
   deleteThread(id: string): boolean {
@@ -260,7 +272,11 @@ export class StorageService {
     if (this.client.hasError()) {
       throw this.client.error;
     }
-    return this.client.entity;
+    const entity = this.client.entity;
+    if (entity && this.isThread(entity)) {
+      return this.enrichWithTemperature(entity);
+    }
+    return entity;
   }
 
   getEntityByName(name: string): Entity | undefined {
@@ -269,7 +285,11 @@ export class StorageService {
     if (this.client.hasError()) {
       throw this.client.error;
     }
-    return this.client.entity;
+    const entity = this.client.entity;
+    if (entity && this.isThread(entity)) {
+      return this.enrichWithTemperature(entity);
+    }
+    return entity;
   }
 
   getAllEntities(): Entity[] {
@@ -278,7 +298,9 @@ export class StorageService {
     if (this.client.hasError()) {
       throw this.client.error;
     }
-    return this.client.entities;
+    return this.client.entities.map(e =>
+      this.isThread(e) ? this.enrichWithTemperature(e) : e
+    );
   }
 
   isContainer(entity: Entity): entity is Container {

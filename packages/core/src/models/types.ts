@@ -2,6 +2,8 @@
 export type ThreadStatus = 'active' | 'paused' | 'stopped' | 'completed' | 'archived';
 
 // Temperature indicates momentum/recency (6 levels)
+// Note: Temperature is now derived from updatedAt, not stored.
+// Use computeTemperature() from temperature.ts.
 export type Temperature = 'frozen' | 'freezing' | 'cold' | 'tepid' | 'warm' | 'hot';
 
 // Size indicates scope of work (5 levels)
@@ -33,6 +35,19 @@ export interface Dependency {
   when: string;
 }
 
+// Link type for related resources
+export type LinkType = 'web' | 'file' | 'thread' | 'custom';
+
+// Link to related resource
+export interface Link {
+  id: string;
+  uri: string;
+  type: LinkType;
+  label?: string;
+  description?: string;
+  addedAt: string;  // ISO timestamp
+}
+
 // Entity type discriminator
 export type EntityType = 'thread' | 'container';
 
@@ -44,11 +59,13 @@ export interface Thread {
   description: string;
   status: ThreadStatus;
   importance: Importance;
-  temperature: Temperature;
+  /** @deprecated Temperature is now derived from updatedAt. Stored value is ignored. */
+  temperature?: Temperature;
   size: ThreadSize;
   parentId: string | null;  // for sub-threads
   groupId: string | null;
   tags: string[];  // Array of tag strings
+  links: Link[];  // Related resources (URLs, files, other threads)
   dependencies: Dependency[];
   progress: ProgressEntry[];
   details: DetailsEntry[];  // Versioned snapshots, latest is current
