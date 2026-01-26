@@ -1,4 +1,4 @@
-// Storage interfaces only - implementations are in separate packages
+// Storage interfaces
 export type {
   IThreadStore,
   IFileThreadStore,
@@ -8,3 +8,8 @@ export type {
   ContainerFilter,
   BackupInfo,
 } from './interfaces';
+
+// Storage client and service facades
+export { StorageClient } from './StorageClient';
+export { StorageService } from './StorageService';
+export { AsyncStorageService } from './AsyncStorageService';

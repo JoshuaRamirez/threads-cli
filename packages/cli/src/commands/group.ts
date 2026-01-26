@@ -1,22 +1,22 @@
 import { Command } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { Group } from '@redjay/threads-core';
+import { Group, Entity } from '@redjay/threads-core';
 import { getStorage } from '../context';
 import chalk from 'chalk';
 
-function findThread(identifier: string) {
+function findEntity(identifier: string) {
   const storage = getStorage();
-  let thread = storage.getThreadById(identifier);
-  if (!thread) thread = storage.getThreadByName(identifier);
-  if (!thread) {
-    const all = storage.getAllThreads();
-    const matches = all.filter(t =>
-      t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
-      t.name.toLowerCase().includes(identifier.toLowerCase())
+  const entities = storage.getAllEntities();
+  let entity = entities.find(e => e.id === identifier);
+  if (!entity) entity = entities.find(e => e.name.toLowerCase() === identifier.toLowerCase());
+  if (!entity) {
+    const matches = entities.filter(e =>
+      e.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
+      e.name.toLowerCase().includes(identifier.toLowerCase())
     );
-    if (matches.length === 1) thread = matches[0];
+    if (matches.length === 1) entity = matches[0];
   }
-  return thread;
+  return entity;
 }
 
 function findGroup(identifier: string) {
@@ -39,11 +39,12 @@ export const groupCommand = new Command('group')
   .argument('[action]', 'Action: list, new, add, remove, delete')
   .argument('[args...]', 'Arguments for the action')
   .option('-d, --description <desc>', 'Description for new group')
+  .option('-n, --limit <n>', 'Limit number of groups shown in list', parseInt)
   .action((action: string | undefined, args: string[], options) => {
     const storage = getStorage();
     if (!action || action === 'list') {
       // List all groups
-      const groups = storage.getAllGroups();
+      let groups = storage.getAllGroups();
       const threads = storage.getAllThreads();
 
       if (groups.length === 0) {
@@ -51,7 +52,14 @@ export const groupCommand = new Command('group')
         return;
       }
 
-      console.log(chalk.bold('\nGroups:\n'));
+      // Apply limit if specified
+      const totalCount = groups.length;
+      if (options.limit && options.limit > 0) {
+        groups = groups.slice(0, options.limit);
+      }
+
+      const limitNote = options.limit && totalCount > options.limit ? ` of ${totalCount}` : '';
+      console.log(chalk.bold(`\nGroups (${groups.length}${limitNote}):\n`));
       groups.forEach(g => {
         const count = threads.filter(t => t.groupId === g.id).length;
         console.log(`  ${chalk.bold(g.name)} ${chalk.gray(`[${g.id.slice(0, 8)}]`)} - ${count} thread(s)`);
@@ -93,16 +101,16 @@ export const groupCommand = new Command('group')
       }
 
       case 'add': {
-        // Add a thread to a group
-        const [threadId, groupId] = args;
-        if (!threadId || !groupId) {
-          console.log(chalk.red('Usage: threads group add <thread> <group>'));
+        // Add a thread or container to a group
+        const [entityId, groupId] = args;
+        if (!entityId || !groupId) {
+          console.log(chalk.red('Usage: threads group add <thread|container> <group>'));
           return;
         }
 
-        const thread = findThread(threadId);
-        if (!thread) {
-          console.log(chalk.red(`Thread "${threadId}" not found`));
+        const entity = findEntity(entityId);
+        if (!entity) {
+          console.log(chalk.red(`Entity "${entityId}" not found`));
           return;
         }
 
@@ -112,32 +120,42 @@ export const groupCommand = new Command('group')
           return;
         }
 
-        storage.updateThread(thread.id, { groupId: group.id });
-        console.log(chalk.green(`\nAdded "${thread.name}" to group "${group.name}"\n`));
+        const isContainer = storage.isContainer(entity);
+        if (isContainer) {
+          storage.updateContainer(entity.id, { groupId: group.id });
+        } else {
+          storage.updateThread(entity.id, { groupId: group.id });
+        }
+        console.log(chalk.green(`\nAdded "${entity.name}" to group "${group.name}"\n`));
         break;
       }
 
       case 'remove': {
-        // Remove a thread from its group
-        const threadId = args[0];
-        if (!threadId) {
-          console.log(chalk.red('Usage: threads group remove <thread>'));
+        // Remove a thread or container from its group
+        const entityId = args[0];
+        if (!entityId) {
+          console.log(chalk.red('Usage: threads group remove <thread|container>'));
           return;
         }
 
-        const thread = findThread(threadId);
-        if (!thread) {
-          console.log(chalk.red(`Thread "${threadId}" not found`));
+        const entity = findEntity(entityId);
+        if (!entity) {
+          console.log(chalk.red(`Entity "${entityId}" not found`));
           return;
         }
 
-        if (!thread.groupId) {
-          console.log(chalk.yellow(`"${thread.name}" is not in a group`));
+        if (!entity.groupId) {
+          console.log(chalk.yellow(`"${entity.name}" is not in a group`));
           return;
         }
 
-        storage.updateThread(thread.id, { groupId: null });
-        console.log(chalk.green(`\nRemoved "${thread.name}" from its group\n`));
+        const isContainer = storage.isContainer(entity);
+        if (isContainer) {
+          storage.updateContainer(entity.id, { groupId: null });
+        } else {
+          storage.updateThread(entity.id, { groupId: null });
+        }
+        console.log(chalk.green(`\nRemoved "${entity.name}" from its group\n`));
         break;
       }
 

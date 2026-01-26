@@ -1,101 +1,83 @@
 /**
- * Storage service facade for CLI commands.
+ * Async storage service facade for network-based backends (Firebase, REST APIs).
  *
- * Wraps IFileThreadStore with a synchronous API that commands can use directly.
- * Uses CLIStorageClient internally to capture callback results.
- *
- * This service is the single point of storage access for all CLI commands,
- * enabling dependency injection and testability.
+ * Wraps IAsyncThreadStore with a Promise-based API that returns values directly.
+ * Uses StorageClient internally to capture callback results.
  */
 
 import {
-  IFileThreadStore,
+  IAsyncThreadStore,
   ThreadFilter,
   ContainerFilter,
-  BackupInfo,
-} from '@redjay/threads-storage';
+} from './interfaces';
 import {
   Thread,
   Container,
   Group,
   Entity,
-  ThreadsData,
 } from '@redjay/threads-core';
-import { CLIStorageClient } from './CLIStorageClient';
+import { StorageClient } from './StorageClient';
 
-export class StorageService {
-  private readonly store: IFileThreadStore;
-  private readonly client: CLIStorageClient;
+export class AsyncStorageService {
+  private readonly store: IAsyncThreadStore;
+  private readonly client: StorageClient;
 
-  constructor(store: IFileThreadStore) {
+  constructor(store: IAsyncThreadStore) {
     this.store = store;
-    this.client = new CLIStorageClient();
+    this.client = new StorageClient();
     this.store.setClient(this.client);
   }
 
   // === Thread Operations ===
 
-  getAllThreads(): Thread[] {
+  async getAllThreads(): Promise<Thread[]> {
     this.client.clear();
-    this.store.getAllThreads();
+    await this.store.getAllThreads();
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.threads;
   }
 
-  getThreadById(id: string): Thread | undefined {
+  async getThreadById(id: string): Promise<Thread | undefined> {
     this.client.clear();
-    this.store.getThreadById(id);
+    await this.store.getThreadById(id);
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.thread;
   }
 
-  getThreadByName(name: string): Thread | undefined {
+  async getThreadByName(name: string): Promise<Thread | undefined> {
     this.client.clear();
-    this.store.getThreadByName(name);
+    await this.store.getThreadByName(name);
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.thread;
   }
 
-  findThreads(filter: ThreadFilter): Thread[] {
+  async findThreads(filter: ThreadFilter): Promise<Thread[]> {
     this.client.clear();
-    this.store.findThreads(filter);
+    await this.store.findThreads(filter);
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.threads;
   }
 
-  /**
-   * Find threads using a predicate function.
-   * Legacy API - filters all threads in-memory.
-   */
-  findThreadsByPredicate(predicate: (t: Thread) => boolean): Thread[] {
-    return this.getAllThreads().filter(predicate);
-  }
-
-  addThread(thread: Thread): void {
+  async addThread(thread: Thread): Promise<void> {
     this.client.clear();
-    this.store.addThread(thread);
+    await this.store.addThread(thread);
     if (this.client.hasError()) {
       throw this.client.error;
     }
   }
 
-  /**
-   * Update a thread and return the updated thread.
-   * Returns undefined if thread not found.
-   */
-  updateThread(id: string, updates: Partial<Thread>): Thread | undefined {
+  async updateThread(id: string, updates: Partial<Thread>): Promise<Thread | undefined> {
     this.client.clear();
-    this.store.updateThread(id, updates);
+    await this.store.updateThread(id, updates);
     if (this.client.hasError()) {
-      // Not found is reported as error in callback pattern
       if (this.client.error?.message.includes('not found')) {
         return undefined;
       }
@@ -104,9 +86,9 @@ export class StorageService {
     return this.client.thread;
   }
 
-  deleteThread(id: string): boolean {
+  async deleteThread(id: string): Promise<boolean> {
     this.client.clear();
-    this.store.deleteThread(id);
+    await this.store.deleteThread(id);
     if (this.client.hasError()) {
       if (this.client.error?.message.includes('not found')) {
         return false;
@@ -118,61 +100,53 @@ export class StorageService {
 
   // === Container Operations ===
 
-  getAllContainers(): Container[] {
+  async getAllContainers(): Promise<Container[]> {
     this.client.clear();
-    this.store.getAllContainers();
+    await this.store.getAllContainers();
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.containers;
   }
 
-  getContainerById(id: string): Container | undefined {
+  async getContainerById(id: string): Promise<Container | undefined> {
     this.client.clear();
-    this.store.getContainerById(id);
+    await this.store.getContainerById(id);
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.container;
   }
 
-  getContainerByName(name: string): Container | undefined {
+  async getContainerByName(name: string): Promise<Container | undefined> {
     this.client.clear();
-    this.store.getContainerByName(name);
+    await this.store.getContainerByName(name);
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.container;
   }
 
-  findContainers(filter: ContainerFilter): Container[] {
+  async findContainers(filter: ContainerFilter): Promise<Container[]> {
     this.client.clear();
-    this.store.findContainers(filter);
+    await this.store.findContainers(filter);
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.containers;
   }
 
-  /**
-   * Find containers using a predicate function.
-   * Legacy API - filters all containers in-memory.
-   */
-  findContainersByPredicate(predicate: (c: Container) => boolean): Container[] {
-    return this.getAllContainers().filter(predicate);
-  }
-
-  addContainer(container: Container): void {
+  async addContainer(container: Container): Promise<void> {
     this.client.clear();
-    this.store.addContainer(container);
+    await this.store.addContainer(container);
     if (this.client.hasError()) {
       throw this.client.error;
     }
   }
 
-  updateContainer(id: string, updates: Partial<Container>): Container | undefined {
+  async updateContainer(id: string, updates: Partial<Container>): Promise<Container | undefined> {
     this.client.clear();
-    this.store.updateContainer(id, updates);
+    await this.store.updateContainer(id, updates);
     if (this.client.hasError()) {
       if (this.client.error?.message.includes('not found')) {
         return undefined;
@@ -182,9 +156,9 @@ export class StorageService {
     return this.client.container;
   }
 
-  deleteContainer(id: string): boolean {
+  async deleteContainer(id: string): Promise<boolean> {
     this.client.clear();
-    this.store.deleteContainer(id);
+    await this.store.deleteContainer(id);
     if (this.client.hasError()) {
       if (this.client.error?.message.includes('not found')) {
         return false;
@@ -196,44 +170,44 @@ export class StorageService {
 
   // === Group Operations ===
 
-  getAllGroups(): Group[] {
+  async getAllGroups(): Promise<Group[]> {
     this.client.clear();
-    this.store.getAllGroups();
+    await this.store.getAllGroups();
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.groups;
   }
 
-  getGroupById(id: string): Group | undefined {
+  async getGroupById(id: string): Promise<Group | undefined> {
     this.client.clear();
-    this.store.getGroupById(id);
+    await this.store.getGroupById(id);
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.group;
   }
 
-  getGroupByName(name: string): Group | undefined {
+  async getGroupByName(name: string): Promise<Group | undefined> {
     this.client.clear();
-    this.store.getGroupByName(name);
+    await this.store.getGroupByName(name);
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.group;
   }
 
-  addGroup(group: Group): void {
+  async addGroup(group: Group): Promise<void> {
     this.client.clear();
-    this.store.addGroup(group);
+    await this.store.addGroup(group);
     if (this.client.hasError()) {
       throw this.client.error;
     }
   }
 
-  updateGroup(id: string, updates: Partial<Group>): Group | undefined {
+  async updateGroup(id: string, updates: Partial<Group>): Promise<Group | undefined> {
     this.client.clear();
-    this.store.updateGroup(id, updates);
+    await this.store.updateGroup(id, updates);
     if (this.client.hasError()) {
       if (this.client.error?.message.includes('not found')) {
         return undefined;
@@ -243,9 +217,9 @@ export class StorageService {
     return this.client.group;
   }
 
-  deleteGroup(id: string): boolean {
+  async deleteGroup(id: string): Promise<boolean> {
     this.client.clear();
-    this.store.deleteGroup(id);
+    await this.store.deleteGroup(id);
     if (this.client.hasError()) {
       if (this.client.error?.message.includes('not found')) {
         return false;
@@ -257,27 +231,27 @@ export class StorageService {
 
   // === Entity Operations ===
 
-  getEntityById(id: string): Entity | undefined {
+  async getEntityById(id: string): Promise<Entity | undefined> {
     this.client.clear();
-    this.store.getEntityById(id);
+    await this.store.getEntityById(id);
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.entity;
   }
 
-  getEntityByName(name: string): Entity | undefined {
+  async getEntityByName(name: string): Promise<Entity | undefined> {
     this.client.clear();
-    this.store.getEntityByName(name);
+    await this.store.getEntityByName(name);
     if (this.client.hasError()) {
       throw this.client.error;
     }
     return this.client.entity;
   }
 
-  getAllEntities(): Entity[] {
+  async getAllEntities(): Promise<Entity[]> {
     this.client.clear();
-    this.store.getAllEntities();
+    await this.store.getAllEntities();
     if (this.client.hasError()) {
       throw this.client.error;
     }
@@ -290,27 +264,5 @@ export class StorageService {
 
   isThread(entity: Entity): entity is Thread {
     return this.store.isThread(entity);
-  }
-
-  // === File-specific Operations ===
-
-  getBackupInfo(): BackupInfo {
-    return this.store.getBackupInfo();
-  }
-
-  loadBackupData(): ThreadsData | undefined {
-    return this.store.loadBackupData();
-  }
-
-  restoreFromBackup(): boolean {
-    return this.store.restoreFromBackup();
-  }
-
-  getDataFilePath(): string {
-    return this.store.getDataFilePath();
-  }
-
-  getBackupFilePath(): string {
-    return this.store.getBackupFilePath();
   }
 }

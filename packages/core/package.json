@@ -15,7 +15,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -b",
@@ -29,6 +31,22 @@
   ],
   "author": "Joshua Ramirez",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoshuaRamirez/threads-cli.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/JoshuaRamirez/threads-cli/issues"
+  },
+  "homepage": "https://github.com/JoshuaRamirez/threads-cli/tree/master/packages/core#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "devDependencies": {
     "typescript": "^5.9.3"
   }

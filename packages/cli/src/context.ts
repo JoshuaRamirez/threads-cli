@@ -7,7 +7,7 @@
  * The context is initialized by the factory before commands are executed.
  */
 
-import { StorageService } from './client';
+import { StorageService } from '@redjay/threads-storage';
 
 let _storage: StorageService | null = null;
 

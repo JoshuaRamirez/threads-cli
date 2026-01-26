@@ -1,14 +1,12 @@
 /**
- * CLI implementation of IStorageClient.
+ * Generic implementation of IStorageClient.
  *
  * Uses field-based result capture pattern. Each callback stores its result
- * in a corresponding field that can be read immediately after the store
- * operation completes (since JsonFileStore operations are synchronous).
+ * in a corresponding field that can be read after the store operation completes.
+ * Works with both sync (IThreadStore) and async (IAsyncThreadStore) stores.
  */
 
-import {
-  IStorageClient,
-} from '@redjay/threads-storage';
+import { IStorageClient } from './interfaces';
 import {
   Thread,
   Container,
@@ -16,7 +14,7 @@ import {
   Entity,
 } from '@redjay/threads-core';
 
-export class CLIStorageClient implements IStorageClient {
+export class StorageClient implements IStorageClient {
   // === Result Fields ===
   private _thread: Thread | undefined;
   private _threads: Thread[] = [];

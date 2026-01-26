@@ -178,6 +178,7 @@ export const agendaCommand = new Command('agenda')
   .description('Show daily/weekly focus view of threads requiring attention')
   .option('-w, --week', 'Expand view to 7 days instead of today')
   .option('-a, --all', 'Include all active threads, not just priority items')
+  .option('-n, --limit <n>', 'Limit items per section', parseInt)
   .action((options) => {
     const storage = getStorage();
     const threads = storage.getAllThreads();
@@ -194,50 +195,75 @@ export const agendaCommand = new Command('agenda')
 
     console.log(chalk.bold(`\n=== AGENDA: ${dateStr} ===\n`));
 
+    // Helper to apply limit
+    const applyLimitToSection = <T>(items: T[]): { display: T[]; total: number } => {
+      const total = items.length;
+      if (options.limit && options.limit > 0 && items.length > options.limit) {
+        return { display: items.slice(0, options.limit), total };
+      }
+      return { display: items, total };
+    };
+
     // Hot section
-    console.log(chalk.red.bold(`Hot (${hotThreads.length})`));
-    if (hotThreads.length === 0) {
+    const hotLimited = applyLimitToSection(hotThreads);
+    console.log(chalk.red.bold(`Hot (${hotLimited.total})`));
+    if (hotLimited.display.length === 0) {
       console.log(chalk.dim('  No hot threads'));
     } else {
-      hotThreads.forEach(t => {
+      hotLimited.display.forEach(t => {
         console.log(formatAgendaLineWithNote(t));
       });
+      if (hotLimited.total > hotLimited.display.length) {
+        console.log(chalk.dim(`  ... +${hotLimited.total - hotLimited.display.length} more`));
+      }
     }
     console.log('');
 
     // Active in period section
+    const activeLimited = applyLimitToSection(activeInPeriod);
     const activeLabel = options.week ? 'Active This Week' : 'Active Today';
-    console.log(chalk.green.bold(`${activeLabel} (${activeInPeriod.length})`));
-    if (activeInPeriod.length === 0) {
+    console.log(chalk.green.bold(`${activeLabel} (${activeLimited.total})`));
+    if (activeLimited.display.length === 0) {
       console.log(chalk.dim(`  No progress recorded ${options.week ? 'this week' : 'today'}`));
     } else {
-      activeInPeriod.forEach(t => {
+      activeLimited.display.forEach(t => {
         console.log(formatAgendaLine(t, true));
       });
+      if (activeLimited.total > activeLimited.display.length) {
+        console.log(chalk.dim(`  ... +${activeLimited.total - activeLimited.display.length} more`));
+      }
     }
     console.log('');
 
     // Needs attention section
-    console.log(chalk.yellow.bold(`Needs Attention (${needsAttention.length})`));
-    if (needsAttention.length === 0) {
+    const attentionLimited = applyLimitToSection(needsAttention);
+    console.log(chalk.yellow.bold(`Needs Attention (${attentionLimited.total})`));
+    if (attentionLimited.display.length === 0) {
       console.log(chalk.dim('  All active threads are warm'));
     } else {
-      needsAttention.forEach(t => {
+      attentionLimited.display.forEach(t => {
         const lastProgress = getLastProgressDate(t);
         const reason = lastProgress
           ? `${formatRelativeTime(lastProgress)}`
           : 'no progress yet';
         console.log(`  ${formatTemperature(t.temperature)} ${formatImportanceStars(t.importance)} ${chalk.bold(t.name)} ${chalk.dim(`(${reason})`)}`);
       });
+      if (attentionLimited.total > attentionLimited.display.length) {
+        console.log(chalk.dim(`  ... +${attentionLimited.total - attentionLimited.display.length} more`));
+      }
     }
     console.log('');
 
     // Other active threads (only if --all)
     if (options.all && otherActive.length > 0) {
-      console.log(chalk.blue.bold(`Other Active (${otherActive.length})`));
-      otherActive.forEach(t => {
+      const otherLimited = applyLimitToSection(otherActive);
+      console.log(chalk.blue.bold(`Other Active (${otherLimited.total})`));
+      otherLimited.display.forEach(t => {
         console.log(formatAgendaLine(t, true));
       });
+      if (otherLimited.total > otherLimited.display.length) {
+        console.log(chalk.dim(`  ... +${otherLimited.total - otherLimited.display.length} more`));
+      }
       console.log('');
     }
 

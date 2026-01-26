@@ -38,20 +38,32 @@ function findEntity(identifier: string): Entity | undefined {
   return entity;
 }
 
+// Thread-only properties
+const threadOnlyProps = ['status', 'temperature', 'temp', 'size', 'importance', 'imp'];
+
 export const setCommand = new Command('set')
-  .description('Set a property on a thread')
-  .argument('<identifier>', 'Thread name or ID')
-  .argument('<property>', 'Property to set (status, temperature, size, importance, name, description)')
+  .description('Set a property on a thread or container')
+  .argument('<identifier>', 'Thread or container name/ID')
+  .argument('<property>', 'Property to set (status, temperature, size, importance, name, description, parent)')
   .argument('<value>', 'New value')
   .action((identifier: string, property: string, value: string) => {
-    const thread = findThread(identifier);
+    const storage = getStorage();
+    const entity = findEntity(identifier);
 
-    if (!thread) {
-      console.log(chalk.red(`Thread "${identifier}" not found`));
+    if (!entity) {
+      console.log(chalk.red(`Entity "${identifier}" not found`));
       return;
     }
 
+    const isContainer = storage.isContainer(entity);
     const prop = property.toLowerCase();
+
+    // Check if trying to set thread-only property on container
+    if (isContainer && threadOnlyProps.includes(prop)) {
+      console.log(chalk.red(`Property "${property}" is only valid for threads, not containers`));
+      return;
+    }
+
     let updates: any = {};
     let displayValue: string = value;
 
@@ -114,8 +126,8 @@ export const setCommand = new Command('set')
             console.log(chalk.red(`Parent "${value}" not found`));
             return;
           }
-          if (parentEntity.id === thread.id) {
-            console.log(chalk.red('Thread cannot be its own parent'));
+          if (parentEntity.id === entity.id) {
+            console.log(chalk.red('Entity cannot be its own parent'));
             return;
           }
           updates.parentId = parentEntity.id;
@@ -128,13 +140,20 @@ export const setCommand = new Command('set')
         break;
 
       default:
-        console.log(chalk.red(`Unknown property "${property}". Use: status, temperature, size, importance, name, description, parent`));
+        const validProps = isContainer
+          ? 'name, description, parent'
+          : 'status, temperature, size, importance, name, description, parent';
+        console.log(chalk.red(`Unknown property "${property}". Use: ${validProps}`));
         return;
     }
 
-    getStorage().updateThread(thread.id, updates);
+    if (isContainer) {
+      storage.updateContainer(entity.id, updates);
+    } else {
+      storage.updateThread(entity.id, updates);
+    }
 
-    console.log(chalk.green(`\nUpdated "${thread.name}":`));
+    console.log(chalk.green(`\nUpdated "${entity.name}":`));
     console.log(`  ${property} → ${displayValue}`);
     console.log('');
   });

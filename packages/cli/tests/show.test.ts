@@ -54,7 +54,7 @@ describe('showCommand', () => {
 
     await showCommand.parseAsync(['node', 'test', 'thread-1']);
 
-    expect(mockFormatThreadDetail).toHaveBeenCalledWith(thread);
+    expect(mockFormatThreadDetail).toHaveBeenCalledWith(thread, 5);
   });
 
   test('show_ContainerById_DisplaysContainerDetail', async () => {
@@ -107,7 +107,7 @@ describe('showCommand', () => {
 
     await showCommand.parseAsync(['node', 'test', 'My Thread']);
 
-    expect(mockFormatThreadDetail).toHaveBeenCalledWith(thread);
+    expect(mockFormatThreadDetail).toHaveBeenCalledWith(thread, 5);
   });
 
   test('show_ByPartialId_FindsSingleMatch', async () => {
@@ -122,7 +122,7 @@ describe('showCommand', () => {
 
     await showCommand.parseAsync(['node', 'test', 'abc']);
 
-    expect(mockFormatThreadDetail).toHaveBeenCalledWith(thread);
+    expect(mockFormatThreadDetail).toHaveBeenCalledWith(thread, 5);
   });
 
   test('show_Container_CallsFormatContainerDetail', async () => {

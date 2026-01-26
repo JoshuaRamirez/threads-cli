@@ -11,7 +11,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -b",
@@ -26,10 +28,25 @@
   ],
   "author": "Joshua Ramirez",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoshuaRamirez/threads-cli.git",
+    "directory": "packages/firebase-storage"
+  },
+  "bugs": {
+    "url": "https://github.com/JoshuaRamirez/threads-cli/issues"
+  },
+  "homepage": "https://github.com/JoshuaRamirez/threads-cli/tree/master/packages/firebase-storage#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
     "@redjay/threads-core": "workspace:*",
-    "@redjay/threads-storage": "workspace:*",
-    "firebase-admin": "^13.0.0"
+    "@redjay/threads-storage": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

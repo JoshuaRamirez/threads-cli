@@ -55,7 +55,8 @@ function findAllMatches(identifier: string): Entity[] {
 export const showCommand = new Command('show')
   .description('Show detailed information about a thread or container')
   .argument('<identifier>', 'Thread/container name or ID (partial match supported)')
-  .action((identifier: string) => {
+  .option('-n, --progress-limit <n>', 'Number of progress entries to show (0 = all, default 5)', parseInt)
+  .action((identifier: string, options) => {
     const entity = findEntity(identifier);
 
     if (!entity) {
@@ -76,7 +77,8 @@ export const showCommand = new Command('show')
     if (getStorage().isContainer(entity)) {
       console.log(formatContainerDetail(entity as Container));
     } else {
-      console.log(formatThreadDetail(entity as Thread));
+      const progressLimit = options.progressLimit !== undefined ? options.progressLimit : 5;
+      console.log(formatThreadDetail(entity as Thread, progressLimit));
     }
     console.log('');
   });

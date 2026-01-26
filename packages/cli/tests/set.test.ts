@@ -43,9 +43,7 @@ describe('setCommand', () => {
   });
 
   test('set_ThreadNotFound_LogsError', async () => {
-    mockStorage.getThreadById.mockReturnValue(undefined);
-    mockStorage.getThreadByName.mockReturnValue(undefined);
-    mockStorage.getAllThreads.mockReturnValue([]);
+    mockStorage.getAllEntities.mockReturnValue([]);
 
     await setCommand.parseAsync(['node', 'test', 'nonexistent', 'status', 'active']);
 
@@ -54,7 +52,8 @@ describe('setCommand', () => {
 
   test('set_Status_UpdatesStatus', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'status', 'paused']);
 
@@ -63,7 +62,8 @@ describe('setCommand', () => {
 
   test('set_InvalidStatus_LogsError', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'status', 'invalid']);
 
@@ -73,7 +73,8 @@ describe('setCommand', () => {
 
   test('set_Temperature_UpdatesTemperature', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'temperature', 'hot']);
 
@@ -82,7 +83,8 @@ describe('setCommand', () => {
 
   test('set_Temp_AliasWorks', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'temp', 'cold']);
 
@@ -91,7 +93,8 @@ describe('setCommand', () => {
 
   test('set_InvalidTemperature_LogsError', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'temperature', 'invalid']);
 
@@ -101,7 +104,8 @@ describe('setCommand', () => {
 
   test('set_Size_UpdatesSize', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'size', 'huge']);
 
@@ -110,7 +114,8 @@ describe('setCommand', () => {
 
   test('set_InvalidSize_LogsError', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'size', 'invalid']);
 
@@ -120,7 +125,8 @@ describe('setCommand', () => {
 
   test('set_Importance_UpdatesImportance', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'importance', '5']);
 
@@ -129,7 +135,8 @@ describe('setCommand', () => {
 
   test('set_ImportanceOutOfRange_LogsError', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'importance', '10']);
 
@@ -139,7 +146,8 @@ describe('setCommand', () => {
 
   test('set_Name_UpdatesName', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'name', 'New Name']);
 
@@ -148,7 +156,8 @@ describe('setCommand', () => {
 
   test('set_Description_UpdatesDescription', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'description', 'New desc']);
 
@@ -158,8 +167,8 @@ describe('setCommand', () => {
   test('set_Parent_UpdatesParentId', async () => {
     const thread = createMockThread({ id: 'thread-1' });
     const parent = createMockThread({ id: 'parent-1', name: 'Parent Thread' });
-    mockStorage.getThreadById.mockReturnValue(thread);
     mockStorage.getAllEntities.mockReturnValue([thread, parent]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'parent', 'parent-1']);
 
@@ -170,7 +179,8 @@ describe('setCommand', () => {
 
   test('set_ParentNone_ClearsParent', async () => {
     const thread = createMockThread({ id: 'thread-1', parentId: 'old-parent' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'parent', 'none']);
 
@@ -179,8 +189,8 @@ describe('setCommand', () => {
 
   test('set_ParentSelf_LogsError', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
     mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'parent', 'thread-1']);
 
@@ -190,8 +200,8 @@ describe('setCommand', () => {
 
   test('set_ParentNotFound_LogsError', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
     mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'parent', 'nonexistent']);
 
@@ -201,7 +211,8 @@ describe('setCommand', () => {
 
   test('set_UnknownProperty_LogsError', async () => {
     const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'unknown', 'value']);
 
@@ -211,7 +222,8 @@ describe('setCommand', () => {
 
   test('set_Success_LogsSuccess', async () => {
     const thread = createMockThread({ id: 'thread-1', name: 'My Thread' });
-    mockStorage.getThreadById.mockReturnValue(thread);
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
 
     await setCommand.parseAsync(['node', 'test', 'thread-1', 'status', 'completed']);
 

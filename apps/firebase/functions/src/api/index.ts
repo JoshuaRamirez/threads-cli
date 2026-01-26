@@ -7,6 +7,7 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { FirestoreStore } from '@redjay/threads-firebase-storage';
+import { AsyncStorageService } from '@redjay/threads-storage';
 import { Thread, Importance } from '@redjay/threads-core';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -316,13 +317,14 @@ async function validateApiKey(authHeader: string | undefined): Promise<string | 
 }
 
 /**
- * Create a store instance for the authenticated tenant.
+ * Create a storage service instance for the authenticated tenant.
  */
-function getStore(tenantId: string): FirestoreStore {
-  return new FirestoreStore({
+function getStore(tenantId: string): AsyncStorageService {
+  const store = new FirestoreStore({
     firestore: admin.firestore(),
     tenantId,
   });
+  return new AsyncStorageService(store);
 }
 
 /**

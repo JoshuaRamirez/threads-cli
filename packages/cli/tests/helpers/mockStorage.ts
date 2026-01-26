@@ -5,7 +5,7 @@
  * allowing tests to configure return values and verify calls.
  */
 
-import { StorageService } from '../../src/client/StorageService';
+import { StorageService } from '@redjay/threads-storage';
 import { Thread, Container, Group, Entity, ThreadsData } from '@redjay/threads-core';
 import { BackupInfo } from '@redjay/threads-storage';
 

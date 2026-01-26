@@ -4,9 +4,6 @@
   "description": "MCP server for Threads platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "threads-mcp": "./dist/index.js"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -14,7 +11,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -b",
@@ -25,10 +24,27 @@
   "keywords": [
     "threads",
     "mcp",
-    "model-context-protocol"
+    "model-context-protocol",
+    "claude"
   ],
   "author": "Joshua Ramirez",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoshuaRamirez/threads-cli.git",
+    "directory": "packages/mcp-server"
+  },
+  "bugs": {
+    "url": "https://github.com/JoshuaRamirez/threads-cli/issues"
+  },
+  "homepage": "https://github.com/JoshuaRamirez/threads-cli/tree/master/packages/mcp-server#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
     "@redjay/threads-core": "workspace:*",
     "@redjay/threads-storage": "workspace:*",
@@ -37,6 +53,7 @@
     "zod": "^3.25.28"
   },
   "devDependencies": {
+    "@types/uuid": "^10.0.0",
     "typescript": "^5.9.3"
   }
 }

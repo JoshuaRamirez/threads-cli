@@ -121,10 +121,11 @@ export const containerCommand = new Command('container')
   .option('--move <target>', 'Move children to target before deleting')
   .option('--dry-run', 'Preview what would be affected')
   .option('-f, --force', 'Skip confirmation prompt')
+  .option('-n, --limit <n>', 'Limit number of containers shown in list', parseInt)
   .action(async (action: string | undefined, args: string[], options) => {
     const storage = getStorage();
     if (!action || action === 'list') {
-      const containers = storage.getAllContainers();
+      let containers = storage.getAllContainers();
       const groups = storage.getAllGroups();
       const threads = storage.getAllThreads();
 
@@ -133,7 +134,14 @@ export const containerCommand = new Command('container')
         return;
       }
 
-      console.log(chalk.bold(`\nContainers (${containers.length}):\n`));
+      // Apply limit if specified
+      const totalCount = containers.length;
+      if (options.limit && options.limit > 0) {
+        containers = containers.slice(0, options.limit);
+      }
+
+      const limitNote = options.limit && totalCount > options.limit ? ` of ${totalCount}` : '';
+      console.log(chalk.bold(`\nContainers (${containers.length}${limitNote}):\n`));
       containers.forEach(c => {
         const group = c.groupId ? groups.find(g => g.id === c.groupId) : null;
         const childCount = [...threads, ...containers].filter(e => e.parentId === c.id).length;

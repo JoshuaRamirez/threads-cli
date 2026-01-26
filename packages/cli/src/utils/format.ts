@@ -73,7 +73,7 @@ export function formatThreadSummary(thread: Thread): string {
   return lines.join('\n');
 }
 
-export function formatThreadDetail(thread: Thread): string {
+export function formatThreadDetail(thread: Thread, progressLimit: number = 5): string {
   const lines = [
     chalk.bold.underline(thread.name),
     '',
@@ -127,14 +127,15 @@ export function formatThreadDetail(thread: Thread): string {
 
   if (thread.progress.length > 0) {
     lines.push('', chalk.bold('Progress:'));
-    // Show last 5 entries
-    const recent = thread.progress.slice(-5);
+    // Show last N entries (default 5, 0 = all)
+    const limit = progressLimit === 0 ? thread.progress.length : progressLimit;
+    const recent = thread.progress.slice(-limit);
     recent.forEach(p => {
       const date = new Date(p.timestamp).toLocaleString();
       lines.push(`  [${chalk.dim(date)}] ${p.note}`);
     });
-    if (thread.progress.length > 5) {
-      lines.push(chalk.dim(`  ... and ${thread.progress.length - 5} more entries`));
+    if (thread.progress.length > limit) {
+      lines.push(chalk.dim(`  ... and ${thread.progress.length - limit} more entries`));
     }
   }
 

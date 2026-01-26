@@ -5,10 +5,26 @@ A conversational thread tracker for managing streams of activity through self-re
 ## Installation
 
 ```bash
-npm install -g threads-cli
+npm install -g @redjay/threads
+# or
+pnpm add -g @redjay/threads
 ```
 
 Requires Node.js 20 or later.
+
+## Packages
+
+This monorepo contains the following packages:
+
+| Package | Description |
+|---------|-------------|
+| [`@redjay/threads`](./packages/threads) | Main entry point (CLI + MCP server) |
+| [`@redjay/threads-core`](./packages/core) | Core types and models |
+| [`@redjay/threads-storage`](./packages/storage) | Storage interface definitions |
+| [`@redjay/threads-json-storage`](./packages/json-storage) | JSON file storage adapter |
+| [`@redjay/threads-firebase-storage`](./packages/firebase-storage) | Firebase Firestore adapter |
+| [`@redjay/threads-cli`](./packages/cli) | CLI command implementations |
+| [`@redjay/threads-mcp`](./packages/mcp-server) | MCP server for AI assistants |
 
 ## Quick Start
 
@@ -111,21 +127,28 @@ Data is stored locally at `~/.threads/threads.json`. This file is managed entire
 ## Development
 
 ```bash
-git clone https://github.com/joshuaramirez/threads-cli.git
+git clone https://github.com/JoshuaRamirez/threads-cli.git
 cd threads-cli
-npm install
-npm run build
-npm link  # Install locally for testing
+pnpm install
+pnpm run build
+pnpm link --global  # Install locally for testing
 ```
 
 ### Scripts
 
 ```bash
-npm run build      # Compile TypeScript
-npm run dev        # Run directly via tsx
-npm test           # Run tests
-npm run typecheck  # Type checking only
+pnpm run build      # Compile all packages
+pnpm run dev        # Run directly via tsx
+pnpm test           # Run all tests
+pnpm run typecheck  # Type checking only
 ```
+
+### Monorepo Tools
+
+This project uses:
+- **pnpm** for package management with workspaces
+- **Turbo** for build orchestration
+- **Changesets** for versioning and publishing
 
 ## License
 

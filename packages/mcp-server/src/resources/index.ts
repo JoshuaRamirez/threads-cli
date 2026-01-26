@@ -2,17 +2,11 @@
  * MCP Resources for Threads platform.
  *
  * Resources provide read-only access to thread data.
+ * Uses getStorage() from context for all storage operations (DI pattern).
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import {
-  getAllThreads,
-  getAllContainers,
-  getAllGroups,
-  getThreadById,
-  getContainerById,
-  getGroupById,
-} from '@redjay/threads-storage';
+import { getStorage } from '../context';
 
 export function registerResources(server: McpServer): void {
   // Resource templates for dynamic access
@@ -20,7 +14,7 @@ export function registerResources(server: McpServer): void {
     'threads://list',
     'threads://list',
     async () => {
-      const threads = getAllThreads();
+      const threads = getStorage().getAllThreads();
       return {
         contents: [{
           uri: 'threads://list',
@@ -35,7 +29,7 @@ export function registerResources(server: McpServer): void {
     'containers://list',
     'containers://list',
     async () => {
-      const containers = getAllContainers();
+      const containers = getStorage().getAllContainers();
       return {
         contents: [{
           uri: 'containers://list',
@@ -50,7 +44,7 @@ export function registerResources(server: McpServer): void {
     'groups://list',
     'groups://list',
     async () => {
-      const groups = getAllGroups();
+      const groups = getStorage().getAllGroups();
       return {
         contents: [{
           uri: 'groups://list',
@@ -66,9 +60,10 @@ export function registerResources(server: McpServer): void {
     'threads://summary',
     'threads://summary',
     async () => {
-      const threads = getAllThreads();
-      const containers = getAllContainers();
-      const groups = getAllGroups();
+      const storage = getStorage();
+      const threads = storage.getAllThreads();
+      const containers = storage.getAllContainers();
+      const groups = storage.getAllGroups();
 
       const summary = {
         counts: {

@@ -10,6 +10,7 @@
     { "path": "../storage" },
     { "path": "../json-storage" },
     { "path": "../firebase-storage" },
-    { "path": "../cli" }
+    { "path": "../cli" },
+    { "path": "../mcp-server" }
   ]
 }

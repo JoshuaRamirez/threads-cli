@@ -2,32 +2,14 @@
  * MCP Tools for Threads platform.
  *
  * Tools provide CRUD operations for threads, containers, groups, and progress.
+ * Uses getStorage() from context for all storage operations (DI pattern).
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  getAllThreads,
-  getThreadById,
-  getThreadByName,
-  addThread,
-  updateThread,
-  deleteThread,
-  getAllContainers,
-  getContainerById,
-  addContainer,
-  updateContainer,
-  deleteContainer,
-  getAllGroups,
-  getGroupById,
-  addGroup,
-  updateGroup,
-  deleteGroup,
-  getEntityById,
-  getEntityByName,
-} from '@redjay/threads-storage';
 import { Thread, Container, Group, ProgressEntry } from '@redjay/threads-core';
+import { getStorage } from '../context';
 
 // Reusable schema fragments - defined once to avoid type inference depth issues
 const statusEnum = ['active', 'paused', 'stopped', 'completed', 'archived'] as const;
@@ -56,9 +38,11 @@ export function registerTools(server: McpServer): void {
       groupId: z.string().optional().describe('Group ID to assign to'),
     } as SchemaShape,
     async (args) => {
+      const storage = getStorage();
+
       // Validate parentId exists if provided
       if (args.parentId) {
-        const parent = getThreadById(args.parentId) ?? getContainerById(args.parentId);
+        const parent = storage.getThreadById(args.parentId) ?? storage.getContainerById(args.parentId);
         if (!parent) {
           return { content: [{ type: 'text' as const, text: `Parent not found: ${args.parentId}` }], isError: true };
         }
@@ -66,7 +50,7 @@ export function registerTools(server: McpServer): void {
 
       // Validate groupId exists if provided
       if (args.groupId) {
-        const group = getGroupById(args.groupId);
+        const group = storage.getGroupById(args.groupId);
         if (!group) {
           return { content: [{ type: 'text' as const, text: `Group not found: ${args.groupId}` }], isError: true };
         }
@@ -92,7 +76,7 @@ export function registerTools(server: McpServer): void {
         updatedAt: now,
       };
 
-      addThread(thread);
+      storage.addThread(thread);
       return { content: [{ type: 'text' as const, text: JSON.stringify(thread, null, 2) }] };
     }
   );
@@ -116,7 +100,7 @@ export function registerTools(server: McpServer): void {
         Object.entries(updates).filter(([_, v]) => v !== undefined)
       );
 
-      const updated = updateThread(id, filteredUpdates);
+      const updated = getStorage().updateThread(id, filteredUpdates);
       if (!updated) {
         return { content: [{ type: 'text' as const, text: `Thread not found: ${id}` }], isError: true };
       }
@@ -132,20 +116,21 @@ export function registerTools(server: McpServer): void {
       cascade: z.boolean().optional().describe('Also archive child threads (default: false)'),
     } as SchemaShape,
     async (args) => {
-      const thread = getThreadById(args.id);
+      const storage = getStorage();
+      const thread = storage.getThreadById(args.id);
       if (!thread) {
         return { content: [{ type: 'text' as const, text: `Thread not found: ${args.id}` }], isError: true };
       }
 
-      const success = updateThread(args.id, { status: 'archived' });
+      const success = storage.updateThread(args.id, { status: 'archived' });
       if (!success) {
         return { content: [{ type: 'text' as const, text: `Failed to archive thread: ${args.id}` }], isError: true };
       }
 
       if (args.cascade) {
-        const children = getAllThreads().filter(t => t.parentId === args.id);
+        const children = storage.getAllThreads().filter(t => t.parentId === args.id);
         for (const child of children) {
-          const childSuccess = updateThread(child.id, { status: 'archived' });
+          const childSuccess = storage.updateThread(child.id, { status: 'archived' });
           if (!childSuccess) {
             return { content: [{ type: 'text' as const, text: `Failed to archive child thread: ${child.id}` }], isError: true };
           }
@@ -163,8 +148,9 @@ export function registerTools(server: McpServer): void {
       id: z.string().describe('Thread ID to delete'),
     } as SchemaShape,
     async (args) => {
+      const storage = getStorage();
       // Check for child threads before deleting
-      const children = getAllThreads().filter(t => t.parentId === args.id);
+      const children = storage.getAllThreads().filter(t => t.parentId === args.id);
       if (children.length > 0) {
         return {
           content: [{ type: 'text' as const, text: `Cannot delete thread: has ${children.length} child thread(s). Delete or move them first.` }],
@@ -172,7 +158,7 @@ export function registerTools(server: McpServer): void {
         };
       }
 
-      const success = deleteThread(args.id);
+      const success = storage.deleteThread(args.id);
       if (!success) {
         return { content: [{ type: 'text' as const, text: `Thread not found: ${args.id}` }], isError: true };
       }
@@ -187,7 +173,8 @@ export function registerTools(server: McpServer): void {
       identifier: z.string().describe('Thread ID or name'),
     } as SchemaShape,
     async (args) => {
-      const thread = getThreadById(args.identifier) ?? getThreadByName(args.identifier);
+      const storage = getStorage();
+      const thread = storage.getThreadById(args.identifier) ?? storage.getThreadByName(args.identifier);
       if (!thread) {
         return { content: [{ type: 'text' as const, text: `Thread not found: ${args.identifier}` }], isError: true };
       }
@@ -204,7 +191,8 @@ export function registerTools(server: McpServer): void {
       timestamp: z.string().datetime().optional().describe('Custom timestamp (ISO 8601, default: now)'),
     } as SchemaShape,
     async (args) => {
-      const thread = getThreadById(args.threadId);
+      const storage = getStorage();
+      const thread = storage.getThreadById(args.threadId);
       if (!thread) {
         return { content: [{ type: 'text' as const, text: `Thread not found: ${args.threadId}` }], isError: true };
       }
@@ -216,7 +204,7 @@ export function registerTools(server: McpServer): void {
       };
 
       const updatedProgress = [...(thread.progress ?? []), progressEntry];
-      const success = updateThread(args.threadId, { progress: updatedProgress });
+      const success = storage.updateThread(args.threadId, { progress: updatedProgress });
       if (!success) {
         return { content: [{ type: 'text' as const, text: `Failed to add progress to thread: ${args.threadId}` }], isError: true };
       }
@@ -233,7 +221,7 @@ export function registerTools(server: McpServer): void {
       limit: z.number().int().min(1).optional().describe('Max entries to return (most recent first)'),
     } as SchemaShape,
     async (args) => {
-      const thread = getThreadById(args.threadId);
+      const thread = getStorage().getThreadById(args.threadId);
       if (!thread) {
         return { content: [{ type: 'text' as const, text: `Thread not found: ${args.threadId}` }], isError: true };
       }
@@ -256,7 +244,8 @@ export function registerTools(server: McpServer): void {
       note: z.string().describe('New note text'),
     } as SchemaShape,
     async (args) => {
-      const thread = getThreadById(args.threadId);
+      const storage = getStorage();
+      const thread = storage.getThreadById(args.threadId);
       if (!thread) {
         return { content: [{ type: 'text' as const, text: `Thread not found: ${args.threadId}` }], isError: true };
       }
@@ -268,7 +257,7 @@ export function registerTools(server: McpServer): void {
 
       const updatedProgress = [...(thread.progress ?? [])];
       updatedProgress[progressIndex] = { ...updatedProgress[progressIndex], note: args.note };
-      const success = updateThread(args.threadId, { progress: updatedProgress });
+      const success = storage.updateThread(args.threadId, { progress: updatedProgress });
       if (!success) {
         return { content: [{ type: 'text' as const, text: `Failed to edit progress on thread: ${args.threadId}` }], isError: true };
       }
@@ -285,7 +274,8 @@ export function registerTools(server: McpServer): void {
       progressId: z.string().describe('Progress entry ID'),
     } as SchemaShape,
     async (args) => {
-      const thread = getThreadById(args.threadId);
+      const storage = getStorage();
+      const thread = storage.getThreadById(args.threadId);
       if (!thread) {
         return { content: [{ type: 'text' as const, text: `Thread not found: ${args.threadId}` }], isError: true };
       }
@@ -295,7 +285,7 @@ export function registerTools(server: McpServer): void {
         return { content: [{ type: 'text' as const, text: `Progress entry not found: ${args.progressId}` }], isError: true };
       }
 
-      const success = updateThread(args.threadId, { progress: updatedProgress });
+      const success = storage.updateThread(args.threadId, { progress: updatedProgress });
       if (!success) {
         return { content: [{ type: 'text' as const, text: `Failed to delete progress from thread: ${args.threadId}` }], isError: true };
       }
@@ -316,9 +306,11 @@ export function registerTools(server: McpServer): void {
       tags: z.array(z.string()).optional().describe('Tags for categorization'),
     } as SchemaShape,
     async (args) => {
+      const storage = getStorage();
+
       // Validate parentId exists if provided
       if (args.parentId) {
-        const parent = getThreadById(args.parentId) ?? getContainerById(args.parentId);
+        const parent = storage.getThreadById(args.parentId) ?? storage.getContainerById(args.parentId);
         if (!parent) {
           return { content: [{ type: 'text' as const, text: `Parent not found: ${args.parentId}` }], isError: true };
         }
@@ -326,7 +318,7 @@ export function registerTools(server: McpServer): void {
 
       // Validate groupId exists if provided
       if (args.groupId) {
-        const group = getGroupById(args.groupId);
+        const group = storage.getGroupById(args.groupId);
         if (!group) {
           return { content: [{ type: 'text' as const, text: `Group not found: ${args.groupId}` }], isError: true };
         }
@@ -346,7 +338,7 @@ export function registerTools(server: McpServer): void {
         updatedAt: now,
       };
 
-      addContainer(container);
+      storage.addContainer(container);
       return { content: [{ type: 'text' as const, text: JSON.stringify(container, null, 2) }] };
     }
   );
@@ -366,7 +358,7 @@ export function registerTools(server: McpServer): void {
         Object.entries(updates).filter(([_, v]) => v !== undefined)
       );
 
-      const updated = updateContainer(id, filteredUpdates);
+      const updated = getStorage().updateContainer(id, filteredUpdates);
       if (!updated) {
         return { content: [{ type: 'text' as const, text: `Container not found: ${id}` }], isError: true };
       }
@@ -381,9 +373,10 @@ export function registerTools(server: McpServer): void {
       id: z.string().describe('Container ID'),
     } as SchemaShape,
     async (args) => {
+      const storage = getStorage();
       // Check for child threads and containers before deleting
-      const childThreads = getAllThreads().filter(t => t.parentId === args.id);
-      const childContainers = getAllContainers().filter(c => c.parentId === args.id);
+      const childThreads = storage.getAllThreads().filter(t => t.parentId === args.id);
+      const childContainers = storage.getAllContainers().filter(c => c.parentId === args.id);
       const totalChildren = childThreads.length + childContainers.length;
       if (totalChildren > 0) {
         return {
@@ -392,7 +385,7 @@ export function registerTools(server: McpServer): void {
         };
       }
 
-      const success = deleteContainer(args.id);
+      const success = storage.deleteContainer(args.id);
       if (!success) {
         return { content: [{ type: 'text' as const, text: `Container not found: ${args.id}` }], isError: true };
       }
@@ -419,7 +412,7 @@ export function registerTools(server: McpServer): void {
         updatedAt: now,
       };
 
-      addGroup(group);
+      getStorage().addGroup(group);
       return { content: [{ type: 'text' as const, text: JSON.stringify(group, null, 2) }] };
     }
   );
@@ -438,7 +431,7 @@ export function registerTools(server: McpServer): void {
         Object.entries(updates).filter(([_, v]) => v !== undefined)
       );
 
-      const updated = updateGroup(id, filteredUpdates);
+      const updated = getStorage().updateGroup(id, filteredUpdates);
       if (!updated) {
         return { content: [{ type: 'text' as const, text: `Group not found: ${id}` }], isError: true };
       }
@@ -453,25 +446,27 @@ export function registerTools(server: McpServer): void {
       id: z.string().describe('Group ID'),
     } as SchemaShape,
     async (args) => {
+      const storage = getStorage();
+
       // Verify group exists first
-      const group = getGroupById(args.id);
+      const group = storage.getGroupById(args.id);
       if (!group) {
         return { content: [{ type: 'text' as const, text: `Group not found: ${args.id}` }], isError: true };
       }
 
       // Clear groupId from all members before deleting the group
-      const memberThreads = getAllThreads().filter(t => t.groupId === args.id);
-      const memberContainers = getAllContainers().filter(c => c.groupId === args.id);
+      const memberThreads = storage.getAllThreads().filter(t => t.groupId === args.id);
+      const memberContainers = storage.getAllContainers().filter(c => c.groupId === args.id);
       const cleanupFailures: string[] = [];
 
       for (const t of memberThreads) {
-        const success = updateThread(t.id, { groupId: null });
+        const success = storage.updateThread(t.id, { groupId: null });
         if (!success) {
           cleanupFailures.push(`thread:${t.id}`);
         }
       }
       for (const c of memberContainers) {
-        const success = updateContainer(c.id, { groupId: null });
+        const success = storage.updateContainer(c.id, { groupId: null });
         if (!success) {
           cleanupFailures.push(`container:${c.id}`);
         }
@@ -484,7 +479,7 @@ export function registerTools(server: McpServer): void {
         };
       }
 
-      const success = deleteGroup(args.id);
+      const success = storage.deleteGroup(args.id);
       if (!success) {
         return { content: [{ type: 'text' as const, text: `Failed to delete group: ${args.id}` }], isError: true };
       }
@@ -502,9 +497,11 @@ export function registerTools(server: McpServer): void {
       parentId: z.string().nullable().describe('New parent ID (null to make root)'),
     } as SchemaShape,
     async (args) => {
+      const storage = getStorage();
+
       // Validate parentId exists if provided
       if (args.parentId) {
-        const parent = getThreadById(args.parentId) ?? getContainerById(args.parentId);
+        const parent = storage.getThreadById(args.parentId) ?? storage.getContainerById(args.parentId);
         if (!parent) {
           return { content: [{ type: 'text' as const, text: `Parent not found: ${args.parentId}` }], isError: true };
         }
@@ -517,23 +514,23 @@ export function registerTools(server: McpServer): void {
             return { content: [{ type: 'text' as const, text: 'Cannot set parent: would create circular reference' }], isError: true };
           }
           visited.add(checkId);
-          const checkEntity = getThreadById(checkId) ?? getContainerById(checkId);
+          const checkEntity = storage.getThreadById(checkId) ?? storage.getContainerById(checkId);
           checkId = checkEntity?.parentId ?? null;
         }
       }
 
-      const thread = getThreadById(args.entityId);
+      const thread = storage.getThreadById(args.entityId);
       if (thread) {
-        const success = updateThread(args.entityId, { parentId: args.parentId });
+        const success = storage.updateThread(args.entityId, { parentId: args.parentId });
         if (!success) {
           return { content: [{ type: 'text' as const, text: `Failed to set parent of thread: ${args.entityId}` }], isError: true };
         }
         return { content: [{ type: 'text' as const, text: `Set parent of thread ${thread.name} to ${args.parentId}` }] };
       }
 
-      const container = getContainerById(args.entityId);
+      const container = storage.getContainerById(args.entityId);
       if (container) {
-        const success = updateContainer(args.entityId, { parentId: args.parentId });
+        const success = storage.updateContainer(args.entityId, { parentId: args.parentId });
         if (!success) {
           return { content: [{ type: 'text' as const, text: `Failed to set parent of container: ${args.entityId}` }], isError: true };
         }
@@ -552,26 +549,28 @@ export function registerTools(server: McpServer): void {
       groupId: z.string().nullable().describe('Group ID (null to remove from group)'),
     } as SchemaShape,
     async (args) => {
+      const storage = getStorage();
+
       // Validate groupId exists if provided (non-null)
       if (args.groupId) {
-        const group = getGroupById(args.groupId);
+        const group = storage.getGroupById(args.groupId);
         if (!group) {
           return { content: [{ type: 'text' as const, text: `Group not found: ${args.groupId}` }], isError: true };
         }
       }
 
-      const thread = getThreadById(args.entityId);
+      const thread = storage.getThreadById(args.entityId);
       if (thread) {
-        const success = updateThread(args.entityId, { groupId: args.groupId });
+        const success = storage.updateThread(args.entityId, { groupId: args.groupId });
         if (!success) {
           return { content: [{ type: 'text' as const, text: `Failed to move thread to group: ${args.entityId}` }], isError: true };
         }
         return { content: [{ type: 'text' as const, text: `Moved thread ${thread.name} to group ${args.groupId}` }] };
       }
 
-      const container = getContainerById(args.entityId);
+      const container = storage.getContainerById(args.entityId);
       if (container) {
-        const success = updateContainer(args.entityId, { groupId: args.groupId });
+        const success = storage.updateContainer(args.entityId, { groupId: args.groupId });
         if (!success) {
           return { content: [{ type: 'text' as const, text: `Failed to move container to group: ${args.entityId}` }], isError: true };
         }
@@ -589,8 +588,9 @@ export function registerTools(server: McpServer): void {
       entityId: z.string().describe('Parent entity ID'),
     } as SchemaShape,
     async (args) => {
-      const threads = getAllThreads().filter(t => t.parentId === args.entityId);
-      const containers = getAllContainers().filter(c => c.parentId === args.entityId);
+      const storage = getStorage();
+      const threads = storage.getAllThreads().filter(t => t.parentId === args.entityId);
+      const containers = storage.getAllContainers().filter(c => c.parentId === args.entityId);
 
       return {
         content: [{
@@ -608,6 +608,7 @@ export function registerTools(server: McpServer): void {
       entityId: z.string().describe('Entity ID'),
     } as SchemaShape,
     async (args) => {
+      const storage = getStorage();
       const ancestors: (Thread | Container)[] = [];
       const visited = new Set<string>();
       let currentId: string | null = args.entityId;
@@ -616,8 +617,8 @@ export function registerTools(server: McpServer): void {
         if (visited.has(currentId)) break;
         visited.add(currentId);
 
-        const thread: Thread | undefined = getThreadById(currentId);
-        const container: Container | undefined = thread ? undefined : getContainerById(currentId);
+        const thread: Thread | undefined = storage.getThreadById(currentId);
+        const container: Container | undefined = thread ? undefined : storage.getContainerById(currentId);
         const entity: Thread | Container | undefined = thread ?? container;
 
         if (!entity) break;
@@ -636,13 +637,14 @@ export function registerTools(server: McpServer): void {
       entityId: z.string().describe('Root entity ID'),
     } as SchemaShape,
     async (args) => {
+      const storage = getStorage();
       const visited = new Set<string>();
       const collectChildren = (parentId: string): { threads: Thread[]; containers: Container[] } => {
         if (visited.has(parentId)) return { threads: [], containers: [] };
         visited.add(parentId);
 
-        const threads = getAllThreads().filter(t => t.parentId === parentId);
-        const containers = getAllContainers().filter(c => c.parentId === parentId);
+        const threads = storage.getAllThreads().filter(t => t.parentId === parentId);
+        const containers = storage.getAllContainers().filter(c => c.parentId === parentId);
 
         const nestedThreads = threads.flatMap(t => collectChildren(t.id).threads);
         const nestedContainers = containers.flatMap(c => collectChildren(c.id).containers);
@@ -653,7 +655,7 @@ export function registerTools(server: McpServer): void {
         };
       };
 
-      const root = getEntityById(args.entityId);
+      const root = storage.getEntityById(args.entityId);
       const children = collectChildren(args.entityId);
 
       return {
@@ -681,7 +683,7 @@ export function registerTools(server: McpServer): void {
       search: z.string().optional().describe('Search in name and description'),
     } as SchemaShape,
     async (args) => {
-      let threads = getAllThreads();
+      let threads = getStorage().getAllThreads();
 
       if (args.status) threads = threads.filter(t => t.status === args.status);
       if (args.temperature) threads = threads.filter(t => t.temperature === args.temperature);
@@ -716,7 +718,7 @@ export function registerTools(server: McpServer): void {
       search: z.string().optional().describe('Search in name and description'),
     } as SchemaShape,
     async (args) => {
-      let containers = getAllContainers();
+      let containers = getStorage().getAllContainers();
 
       if (args.parentId !== undefined) containers = containers.filter(c => c.parentId === args.parentId);
       if (args.groupId) containers = containers.filter(c => c.groupId === args.groupId);
@@ -742,7 +744,7 @@ export function registerTools(server: McpServer): void {
     'List all groups',
     {} as SchemaShape,
     async () => {
-      const groups = getAllGroups();
+      const groups = getStorage().getAllGroups();
       return { content: [{ type: 'text' as const, text: JSON.stringify(groups, null, 2) }] };
     }
   );
@@ -754,12 +756,13 @@ export function registerTools(server: McpServer): void {
       query: z.string().describe('Search query'),
     } as SchemaShape,
     async (args) => {
+      const storage = getStorage();
       const queryLower = args.query.toLowerCase();
-      const threads = getAllThreads().filter(t =>
+      const threads = storage.getAllThreads().filter(t =>
         t.name.toLowerCase().includes(queryLower) ||
         t.description?.toLowerCase().includes(queryLower)
       );
-      const containers = getAllContainers().filter(c =>
+      const containers = storage.getAllContainers().filter(c =>
         c.name.toLowerCase().includes(queryLower) ||
         c.description?.toLowerCase().includes(queryLower)
       );
@@ -778,7 +781,7 @@ export function registerTools(server: McpServer): void {
     'Suggest the next thread to work on based on priority',
     {} as SchemaShape,
     async () => {
-      const threads = getAllThreads()
+      const threads = getStorage().getAllThreads()
         .filter(t => t.status === 'active')
         .sort((a, b) => {
           // Sort by importance (desc), then temperature (desc)
@@ -800,9 +803,10 @@ export function registerTools(server: McpServer): void {
     'Get the complete hierarchy tree',
     {} as SchemaShape,
     async () => {
-      const threads = getAllThreads();
-      const containers = getAllContainers();
-      const groups = getAllGroups();
+      const storage = getStorage();
+      const threads = storage.getAllThreads();
+      const containers = storage.getAllContainers();
+      const groups = storage.getAllGroups();
 
       // Build tree structure
       const tree = {
@@ -824,7 +828,8 @@ export function registerTools(server: McpServer): void {
       identifier: z.string().describe('Entity ID or name'),
     } as SchemaShape,
     async (args) => {
-      const entity = getEntityById(args.identifier) ?? getEntityByName(args.identifier);
+      const storage = getStorage();
+      const entity = storage.getEntityById(args.identifier) ?? storage.getEntityByName(args.identifier);
       if (!entity) {
         return { content: [{ type: 'text' as const, text: `Entity not found: ${args.identifier}` }], isError: true };
       }
@@ -839,8 +844,9 @@ export function registerTools(server: McpServer): void {
       identifier: z.string().describe('Container ID or name'),
     } as SchemaShape,
     async (args) => {
-      const container = getContainerById(args.identifier) ??
-        getAllContainers().find(c => c.name.toLowerCase() === args.identifier.toLowerCase());
+      const storage = getStorage();
+      const container = storage.getContainerById(args.identifier) ??
+        storage.getAllContainers().find(c => c.name.toLowerCase() === args.identifier.toLowerCase());
       if (!container) {
         return { content: [{ type: 'text' as const, text: `Container not found: ${args.identifier}` }], isError: true };
       }
@@ -855,8 +861,9 @@ export function registerTools(server: McpServer): void {
       identifier: z.string().describe('Group ID or name'),
     } as SchemaShape,
     async (args) => {
-      const group = getGroupById(args.identifier) ??
-        getAllGroups().find(g => g.name.toLowerCase() === args.identifier.toLowerCase());
+      const storage = getStorage();
+      const group = storage.getGroupById(args.identifier) ??
+        storage.getAllGroups().find(g => g.name.toLowerCase() === args.identifier.toLowerCase());
       if (!group) {
         return { content: [{ type: 'text' as const, text: `Group not found: ${args.identifier}` }], isError: true };
       }

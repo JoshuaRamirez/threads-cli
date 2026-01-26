@@ -6,8 +6,7 @@
  */
 
 import { Command } from 'commander';
-import { IFileThreadStore } from '@redjay/threads-storage';
-import { StorageService } from './client';
+import { IFileThreadStore, StorageService } from '@redjay/threads-storage';
 import { initContext } from './context';
 
 // Import all commands

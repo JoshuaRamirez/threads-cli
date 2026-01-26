@@ -120,9 +120,9 @@ describe('groupCommand', () => {
     test('add_ValidThreadAndGroup_AddsToGroup', async () => {
       const thread = createMockThread({ id: 'thread-1' });
       const group = createMockGroup({ id: 'group-1' });
-      mockStorage.getThreadById.mockReturnValue(thread);
+      mockStorage.getAllEntities.mockReturnValue([thread]);
+      mockStorage.isContainer.mockReturnValue(false);
       mockStorage.getGroupById.mockReturnValue(group);
-      mockStorage.getAllThreads.mockReturnValue([thread]);
       mockStorage.getAllGroups.mockReturnValue([group]);
 
       await groupCommand.parseAsync(['node', 'test', 'add', 'thread-1', 'group-1']);
@@ -131,9 +131,7 @@ describe('groupCommand', () => {
     });
 
     test('add_ThreadNotFound_LogsError', async () => {
-      mockStorage.getThreadById.mockReturnValue(undefined);
-      mockStorage.getThreadByName.mockReturnValue(undefined);
-      mockStorage.getAllThreads.mockReturnValue([]);
+      mockStorage.getAllEntities.mockReturnValue([]);
 
       await groupCommand.parseAsync(['node', 'test', 'add', 'nonexistent', 'group-1']);
 
@@ -142,7 +140,8 @@ describe('groupCommand', () => {
 
     test('add_GroupNotFound_LogsError', async () => {
       const thread = createMockThread({ id: 'thread-1' });
-      mockStorage.getThreadById.mockReturnValue(thread);
+      mockStorage.getAllEntities.mockReturnValue([thread]);
+      mockStorage.isContainer.mockReturnValue(false);
       mockStorage.getGroupById.mockReturnValue(undefined);
       mockStorage.getGroupByName.mockReturnValue(undefined);
       mockStorage.getAllGroups.mockReturnValue([]);
@@ -162,7 +161,8 @@ describe('groupCommand', () => {
   describe('remove action', () => {
     test('remove_ThreadInGroup_RemovesFromGroup', async () => {
       const thread = createMockThread({ id: 'thread-1', groupId: 'group-1' });
-      mockStorage.getThreadById.mockReturnValue(thread);
+      mockStorage.getAllEntities.mockReturnValue([thread]);
+      mockStorage.isContainer.mockReturnValue(false);
 
       await groupCommand.parseAsync(['node', 'test', 'remove', 'thread-1']);
 
@@ -171,7 +171,8 @@ describe('groupCommand', () => {
 
     test('remove_ThreadNotInGroup_LogsWarning', async () => {
       const thread = createMockThread({ id: 'thread-1', groupId: null });
-      mockStorage.getThreadById.mockReturnValue(thread);
+      mockStorage.getAllEntities.mockReturnValue([thread]);
+      mockStorage.isContainer.mockReturnValue(false);
 
       await groupCommand.parseAsync(['node', 'test', 'remove', 'thread-1']);
 
@@ -179,9 +180,7 @@ describe('groupCommand', () => {
     });
 
     test('remove_ThreadNotFound_LogsError', async () => {
-      mockStorage.getThreadById.mockReturnValue(undefined);
-      mockStorage.getThreadByName.mockReturnValue(undefined);
-      mockStorage.getAllThreads.mockReturnValue([]);
+      mockStorage.getAllEntities.mockReturnValue([]);
 
       await groupCommand.parseAsync(['node', 'test', 'remove', 'nonexistent']);
 
