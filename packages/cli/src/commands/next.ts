@@ -55,7 +55,7 @@ export interface ScoredThread {
 // Calculate composite score for a thread
 export function scoreThread(thread: Thread): ScoredThread {
   const impScore = thread.importance; // 1-5
-  const tempScore = temperatureScores[thread.temperature]; // 0-5
+  const tempScore = temperatureScores[thread.temperature ?? 'frozen']; // 0-5
   const recentActivity = getMostRecentActivity(thread);
   const recScore = recencyScore(recentActivity); // ~0-5
 
@@ -91,7 +91,7 @@ function formatScoredThread(scored: ScoredThread, rank: number, showExplain: boo
   }
 
   // Show key properties
-  const tempLabel = formatTemperature(t.temperature);
+  const tempLabel = formatTemperature(t.temperature ?? 'frozen');
   const stars = formatImportanceStars(t.importance);
   lines.push(`     ${tempLabel} ${stars}`);
 

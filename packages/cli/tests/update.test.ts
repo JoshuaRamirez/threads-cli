@@ -16,7 +16,6 @@ jest.mock('../src/context', () => ({
 // Mock utils
 jest.mock('../src/utils', () => ({
   formatStatus: jest.fn((s: string) => s),
-  formatTemperature: jest.fn((t: string) => t),
   formatSize: jest.fn((s: string) => s),
   formatImportance: jest.fn((i: number) => `${i}/5`),
 }));
@@ -81,25 +80,6 @@ describe('updateCommand', () => {
     await updateCommand.parseAsync(['node', 'test', 't1', '-s', 'invalid']);
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid status'));
-    expect(mockStorage.updateThread).not.toHaveBeenCalled();
-  });
-
-  test('update_Temperature_UpdatesTemperature', async () => {
-    const thread = createMockThread({ id: 't1', temperature: 'warm' });
-    mockStorage.getThreadById.mockReturnValue(thread);
-
-    await updateCommand.parseAsync(['node', 'test', 't1', '-t', 'hot']);
-
-    expect(mockStorage.updateThread).toHaveBeenCalledWith('t1', expect.objectContaining({ temperature: 'hot' }));
-  });
-
-  test('update_InvalidTemperature_LogsError', async () => {
-    const thread = createMockThread({ id: 't1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
-
-    await updateCommand.parseAsync(['node', 'test', 't1', '-t', 'boiling']);
-
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid temperature'));
     expect(mockStorage.updateThread).not.toHaveBeenCalled();
   });
 
@@ -214,11 +194,11 @@ describe('updateCommand', () => {
     const thread = createMockThread({ id: 't1', name: 'Thread' });
     mockStorage.getThreadById.mockReturnValue(thread);
 
-    await updateCommand.parseAsync(['node', 'test', 't1', '-s', 'paused', '-t', 'cold', '-i', '4']);
+    await updateCommand.parseAsync(['node', 'test', 't1', '-s', 'paused', '-z', 'large', '-i', '4']);
 
     expect(mockStorage.updateThread).toHaveBeenCalledWith('t1', expect.objectContaining({
       status: 'paused',
-      temperature: 'cold',
+      size: 'large',
       importance: 4,
     }));
   });

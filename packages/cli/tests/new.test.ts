@@ -99,25 +99,6 @@ describe('newCommand', () => {
     expect(mockStorage.addThread).not.toHaveBeenCalled();
   });
 
-  test('new_WithTemp_SetsTemperature', async () => {
-    mockStorage.getThreadByName.mockReturnValue(undefined);
-
-    await newCommand.parseAsync(['node', 'test', 'Thread', '-t', 'hot']);
-
-    expect(mockStorage.addThread).toHaveBeenCalledWith(
-      expect.objectContaining({ temperature: 'hot' })
-    );
-  });
-
-  test('new_InvalidTemperature_LogsError', async () => {
-    mockStorage.getThreadByName.mockReturnValue(undefined);
-
-    await newCommand.parseAsync(['node', 'test', 'Thread', '-t', 'invalid']);
-
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid temperature'));
-    expect(mockStorage.addThread).not.toHaveBeenCalled();
-  });
-
   test('new_WithSize_SetsSize', async () => {
     mockStorage.getThreadByName.mockReturnValue(undefined);
 
@@ -196,7 +177,6 @@ describe('newCommand', () => {
     expect(mockStorage.addThread).toHaveBeenCalledWith(
       expect.objectContaining({
         status: 'active',
-        temperature: 'warm',
         size: 'medium',
         importance: 3,
       })

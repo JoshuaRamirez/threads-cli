@@ -179,15 +179,17 @@ describe('spawnCommand', () => {
     );
   });
 
-  test('spawn_StartsWarm', async () => {
+  test('spawn_DoesNotSetTemperature', async () => {
+    // Temperature is derived from updatedAt, not stored
     const parent = createMockThread({ id: 'parent-1' });
     mockStorage.getThreadById.mockReturnValue(parent);
     mockStorage.getThreadByName.mockReturnValue(undefined);
 
     await spawnCommand.parseAsync(['node', 'test', 'parent-1', 'Child']);
 
+    // Temperature should not be set (it's derived)
     expect(mockStorage.addThread).toHaveBeenCalledWith(
-      expect.objectContaining({ temperature: 'warm' })
+      expect.not.objectContaining({ temperature: expect.anything() })
     );
   });
 

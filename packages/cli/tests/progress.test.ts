@@ -67,28 +67,6 @@ describe('progressCommand', () => {
     });
   });
 
-  test('progress_WithWarm_SetsTemperature', async () => {
-    const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
-
-    await progressCommand.parseAsync(['node', 'test', 'thread-1', 'Note', '--warm']);
-
-    expect(mockStorage.updateThread).toHaveBeenCalledWith('thread-1', expect.objectContaining({
-      temperature: 'warm',
-    }));
-  });
-
-  test('progress_WithHot_SetsTemperature', async () => {
-    const thread = createMockThread({ id: 'thread-1' });
-    mockStorage.getThreadById.mockReturnValue(thread);
-
-    await progressCommand.parseAsync(['node', 'test', 'thread-1', 'Note', '--hot']);
-
-    expect(mockStorage.updateThread).toHaveBeenCalledWith('thread-1', expect.objectContaining({
-      temperature: 'hot',
-    }));
-  });
-
   test('progress_WithAt_UsesCustomTimestamp', async () => {
     const thread = createMockThread({ id: 'thread-1' });
     mockStorage.getThreadById.mockReturnValue(thread);

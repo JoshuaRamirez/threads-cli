@@ -28,8 +28,6 @@ export const progressCommand = new Command('progress')
   .description('Add a progress note to a thread')
   .argument('<identifier>', 'Thread name or ID')
   .argument('<note>', 'Progress note to add')
-  .option('--warm', 'Also set temperature to warm')
-  .option('--hot', 'Also set temperature to hot')
   .option('--at <datetime>', 'Set custom timestamp (e.g., "2026-01-10 3pm", "yesterday")')
   .action((identifier: string, note: string, options) => {
     const storage = getStorage();
@@ -76,22 +74,11 @@ export const progressCommand = new Command('progress')
       note
     };
 
-    const updates: any = {
+    storage.updateThread(thread.id, {
       progress: [...thread.progress, entry]
-    };
-
-    if (options.hot) {
-      updates.temperature = 'hot';
-    } else if (options.warm) {
-      updates.temperature = 'warm';
-    }
-
-    storage.updateThread(thread.id, updates);
+    });
 
     console.log(chalk.green(`\nProgress added to "${thread.name}":`));
     console.log(`  [${new Date(entry.timestamp).toLocaleString()}] ${note}`);
-    if (options.hot || options.warm) {
-      console.log(chalk.dim(`  Temperature set to ${options.hot ? 'hot' : 'warm'}`));
-    }
     console.log('');
   });

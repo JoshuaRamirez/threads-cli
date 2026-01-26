@@ -1,6 +1,6 @@
 import { Command, Option } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance } from '@redjay/threads-core';
+import { Thread, ThreadSize, Importance } from '@redjay/threads-core';
 import { formatThreadSummary } from '../utils';
 import { getStorage } from '../context';
 import chalk from 'chalk';
@@ -70,11 +70,11 @@ export const spawnCommand = new Command('spawn')
       description: options.description || '',
       status: 'active',
       importance: importance as Importance,
-      temperature: 'warm',  // New sub-threads start warm
       size: options.size as ThreadSize,
       parentId: parent.id,
       groupId: parent.groupId,  // Inherit group from parent
       tags,
+      links: [],
       dependencies: [],
       progress: [],
       details: [],

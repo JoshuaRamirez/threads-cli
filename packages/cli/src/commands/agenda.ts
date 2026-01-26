@@ -59,7 +59,8 @@ export function formatRelativeTime(isoDate: string, now: Date = new Date()): str
 // Sort threads by temperature (hottest first), then importance, then updatedAt
 export function sortByPriority(threads: Thread[]): Thread[] {
   return [...threads].sort((a, b) => {
-    const tempDiff = TEMP_ORDER.indexOf(a.temperature) - TEMP_ORDER.indexOf(b.temperature);
+    // Temperature is computed by StorageService; fallback to 'frozen' if somehow missing
+    const tempDiff = TEMP_ORDER.indexOf(a.temperature ?? 'frozen') - TEMP_ORDER.indexOf(b.temperature ?? 'frozen');
     if (tempDiff !== 0) return tempDiff;
     if (a.importance !== b.importance) return b.importance - a.importance;
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
@@ -116,7 +117,7 @@ export function categorizeThreads(
       if (t.temperature === 'hot') return false;
 
       const lastProgress = getLastProgressDate(t);
-      const isColdTemp = COLD_TEMPS.includes(t.temperature);
+      const isColdTemp = COLD_TEMPS.includes(t.temperature ?? 'frozen');
       const noRecentProgress = !lastProgress || daysSince(lastProgress, now) > 7;
 
       return isColdTemp || noRecentProgress;
@@ -141,7 +142,7 @@ export function categorizeThreads(
 
 // Compact thread line for agenda display
 function formatAgendaLine(thread: Thread, showLastActivity: boolean = true): string {
-  const temp = formatTemperature(thread.temperature);
+  const temp = formatTemperature(thread.temperature ?? 'frozen');
   const stars = formatImportanceStars(thread.importance);
   const name = chalk.bold(thread.name);
 
@@ -160,7 +161,7 @@ function formatAgendaLine(thread: Thread, showLastActivity: boolean = true): str
 
 // Compact thread line with last note
 function formatAgendaLineWithNote(thread: Thread): string {
-  const temp = formatTemperature(thread.temperature);
+  const temp = formatTemperature(thread.temperature ?? 'frozen');
   const stars = formatImportanceStars(thread.importance);
   const name = chalk.bold(thread.name);
   const lastNote = getLastProgressNote(thread);
@@ -246,7 +247,7 @@ export const agendaCommand = new Command('agenda')
         const reason = lastProgress
           ? `${formatRelativeTime(lastProgress)}`
           : 'no progress yet';
-        console.log(`  ${formatTemperature(t.temperature)} ${formatImportanceStars(t.importance)} ${chalk.bold(t.name)} ${chalk.dim(`(${reason})`)}`);
+        console.log(`  ${formatTemperature(t.temperature ?? 'frozen')} ${formatImportanceStars(t.importance)} ${chalk.bold(t.name)} ${chalk.dim(`(${reason})`)}`);
       });
       if (attentionLimited.total > attentionLimited.display.length) {
         console.log(chalk.dim(`  ... +${attentionLimited.total - attentionLimited.display.length} more`));

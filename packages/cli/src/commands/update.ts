@@ -1,11 +1,10 @@
 import { Command } from 'commander';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance } from '@redjay/threads-core';
-import { formatStatus, formatTemperature, formatSize, formatImportance } from '../utils';
+import { Thread, ThreadStatus, ThreadSize, Importance } from '@redjay/threads-core';
+import { formatStatus, formatSize, formatImportance } from '../utils';
 import { getStorage } from '../context';
 import chalk from 'chalk';
 
 const validStatuses: ThreadStatus[] = ['active', 'paused', 'stopped', 'completed', 'archived'];
-const validTemps: Temperature[] = ['frozen', 'freezing', 'cold', 'tepid', 'warm', 'hot'];
 const validSizes: ThreadSize[] = ['tiny', 'small', 'medium', 'large', 'huge'];
 
 function findThread(identifier: string): Thread | undefined {
@@ -30,7 +29,6 @@ function formatTags(tags: string[]): string {
 
 interface UpdateOptions {
   status?: string;
-  temperature?: string;
   size?: string;
   importance?: string;
   name?: string;
@@ -44,7 +42,6 @@ export const updateCommand = new Command('update')
   .description('Update properties on a thread')
   .argument('<identifier>', 'Thread name or ID')
   .option('-s, --status <status>', 'Set status (active, paused, stopped, completed, archived)')
-  .option('-t, --temperature <temp>', 'Set temperature (frozen, freezing, cold, tepid, warm, hot)')
   .option('-z, --size <size>', 'Set size (tiny, small, medium, large, huge)')
   .option('-i, --importance <n>', 'Set importance (1-5)')
   .option('-n, --name <name>', 'Set name')
@@ -71,16 +68,6 @@ export const updateCommand = new Command('update')
       }
       updates.status = options.status as ThreadStatus;
       changes.push(`status -> ${formatStatus(options.status as ThreadStatus)}`);
-    }
-
-    // Handle temperature
-    if (options.temperature) {
-      if (!validTemps.includes(options.temperature as Temperature)) {
-        console.log(chalk.red(`Invalid temperature. Use: ${validTemps.join(', ')}`));
-        return;
-      }
-      updates.temperature = options.temperature as Temperature;
-      changes.push(`temperature -> ${formatTemperature(options.temperature as Temperature)}`);
     }
 
     // Handle size

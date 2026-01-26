@@ -1,6 +1,6 @@
 import { Command, Option } from 'commander';
 import { v4 as uuidv4 } from 'uuid';
-import { Thread, ThreadStatus, Temperature, ThreadSize, Importance, Entity } from '@redjay/threads-core';
+import { Thread, ThreadStatus, ThreadSize, Importance, Entity } from '@redjay/threads-core';
 import { formatThreadSummary } from '../utils';
 import { getStorage } from '../context';
 import chalk from 'chalk';
@@ -38,8 +38,6 @@ export const newCommand = new Command('new')
   .argument('<name>', 'Name of the thread')
   .option('-d, --description <desc>', 'Description of the thread')
   .option('-s, --status <status>', 'Initial status (default: active)', 'active')
-  .option('-t, --temp <temp>', 'Initial temperature (default: warm)', 'warm')
-  .addOption(new Option('--temperature <temp>', 'Alias for --temp').hideHelp())
   .option('-z, --size <size>', 'Size estimate (default: medium)', 'medium')
   .option('-i, --importance <level>', 'Importance 1-5 (default: 3)')
   .option('-T, --tags <tags>', 'Comma-separated tags')
@@ -48,8 +46,6 @@ export const newCommand = new Command('new')
   .option('-p, --parent <parent>', 'Parent thread or container (creates sub-thread)')
   .action((name: string, options) => {
     const storage = getStorage();
-    // Apply defaults - coalesce --temp and --temperature aliases
-    const temperatureValue = options.temp || options.temperature || 'warm';
     const importance = options.importance ? parseInt(options.importance) : 3;
     // Check for duplicate name
     const existing = storage.getThreadByName(name);
@@ -60,15 +56,10 @@ export const newCommand = new Command('new')
 
     // Validate options
     const validStatuses: ThreadStatus[] = ['active', 'paused', 'stopped', 'completed', 'archived'];
-    const validTemps: Temperature[] = ['frozen', 'freezing', 'cold', 'tepid', 'warm', 'hot'];
     const validSizes: ThreadSize[] = ['tiny', 'small', 'medium', 'large', 'huge'];
 
     if (!validStatuses.includes(options.status as ThreadStatus)) {
       console.log(chalk.red(`Invalid status. Use: ${validStatuses.join(', ')}`));
-      return;
-    }
-    if (!validTemps.includes(temperatureValue as Temperature)) {
-      console.log(chalk.red(`Invalid temperature. Use: ${validTemps.join(', ')}`));
       return;
     }
     if (!validSizes.includes(options.size as ThreadSize)) {
@@ -126,11 +117,11 @@ export const newCommand = new Command('new')
       description: options.description || '',
       status: options.status as ThreadStatus,
       importance: importance as Importance,
-      temperature: temperatureValue as Temperature,
       size: options.size as ThreadSize,
       parentId,
       groupId,
       tags,
+      links: [],
       dependencies: [],
       progress: [],
       details: [],

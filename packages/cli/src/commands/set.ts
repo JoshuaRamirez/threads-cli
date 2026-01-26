@@ -8,21 +8,6 @@ const validStatuses: ThreadStatus[] = ['active', 'paused', 'stopped', 'completed
 const validTemps: Temperature[] = ['frozen', 'freezing', 'cold', 'tepid', 'warm', 'hot'];
 const validSizes: ThreadSize[] = ['tiny', 'small', 'medium', 'large', 'huge'];
 
-function findThread(identifier: string) {
-  const storage = getStorage();
-  let thread = storage.getThreadById(identifier);
-  if (!thread) thread = storage.getThreadByName(identifier);
-  if (!thread) {
-    const all = storage.getAllThreads();
-    const matches = all.filter(t =>
-      t.id.toLowerCase().startsWith(identifier.toLowerCase()) ||
-      t.name.toLowerCase().includes(identifier.toLowerCase())
-    );
-    if (matches.length === 1) thread = matches[0];
-  }
-  return thread;
-}
-
 function findEntity(identifier: string): Entity | undefined {
   const storage = getStorage();
   const entities = storage.getAllEntities();

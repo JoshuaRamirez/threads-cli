@@ -229,4 +229,91 @@ describe('setCommand', () => {
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Updated'));
   });
+
+  // Container-specific tests
+  test('set_Container_NameUpdates', async () => {
+    const container = { id: 'c1', name: 'Container', type: 'container' as const, parentId: null, groupId: null };
+    mockStorage.getAllEntities.mockReturnValue([container]);
+    mockStorage.isContainer.mockReturnValue(true);
+
+    await setCommand.parseAsync(['node', 'test', 'c1', 'name', 'New Container Name']);
+
+    expect(mockStorage.updateContainer).toHaveBeenCalledWith('c1', { name: 'New Container Name' });
+  });
+
+  test('set_Container_DescriptionUpdates', async () => {
+    const container = { id: 'c1', name: 'Container', type: 'container' as const, parentId: null, groupId: null };
+    mockStorage.getAllEntities.mockReturnValue([container]);
+    mockStorage.isContainer.mockReturnValue(true);
+
+    await setCommand.parseAsync(['node', 'test', 'c1', 'description', 'New desc']);
+
+    expect(mockStorage.updateContainer).toHaveBeenCalledWith('c1', { description: 'New desc' });
+  });
+
+  test('set_Container_ParentUpdates', async () => {
+    const container = { id: 'c1', name: 'Container', type: 'container' as const, parentId: null, groupId: null };
+    const parent = { id: 'c2', name: 'Parent Container', type: 'container' as const, parentId: null, groupId: null };
+    mockStorage.getAllEntities.mockReturnValue([container, parent]);
+    mockStorage.isContainer.mockReturnValue(true);
+
+    await setCommand.parseAsync(['node', 'test', 'c1', 'parent', 'c2']);
+
+    expect(mockStorage.updateContainer).toHaveBeenCalledWith('c1', expect.objectContaining({ parentId: 'c2' }));
+  });
+
+  test('set_Container_ThreadOnlyProperty_LogsError', async () => {
+    const container = { id: 'c1', name: 'Container', type: 'container' as const, parentId: null, groupId: null };
+    mockStorage.getAllEntities.mockReturnValue([container]);
+    mockStorage.isContainer.mockReturnValue(true);
+
+    await setCommand.parseAsync(['node', 'test', 'c1', 'status', 'active']);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('only valid for threads'));
+    expect(mockStorage.updateContainer).not.toHaveBeenCalled();
+  });
+
+  test('set_Container_TemperatureOnContainer_LogsError', async () => {
+    const container = { id: 'c1', name: 'Container', type: 'container' as const, parentId: null, groupId: null };
+    mockStorage.getAllEntities.mockReturnValue([container]);
+    mockStorage.isContainer.mockReturnValue(true);
+
+    await setCommand.parseAsync(['node', 'test', 'c1', 'temp', 'hot']);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('only valid for threads'));
+  });
+
+  test('set_Parent_InheritsGroupId', async () => {
+    const thread = createMockThread({ id: 'thread-1' });
+    const parent = createMockThread({ id: 'parent-1', name: 'Parent', groupId: 'group-abc' });
+    mockStorage.getAllEntities.mockReturnValue([thread, parent]);
+    mockStorage.isContainer.mockReturnValue(false);
+
+    await setCommand.parseAsync(['node', 'test', 'thread-1', 'parent', 'parent-1']);
+
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('thread-1', expect.objectContaining({
+      parentId: 'parent-1',
+      groupId: 'group-abc',
+    }));
+  });
+
+  test('set_Imp_AliasWorks', async () => {
+    const thread = createMockThread({ id: 'thread-1' });
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
+
+    await setCommand.parseAsync(['node', 'test', 'thread-1', 'imp', '4']);
+
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('thread-1', { importance: 4 });
+  });
+
+  test('set_Desc_AliasWorks', async () => {
+    const thread = createMockThread({ id: 'thread-1' });
+    mockStorage.getAllEntities.mockReturnValue([thread]);
+    mockStorage.isContainer.mockReturnValue(false);
+
+    await setCommand.parseAsync(['node', 'test', 'thread-1', 'desc', 'New description']);
+
+    expect(mockStorage.updateThread).toHaveBeenCalledWith('thread-1', { description: 'New description' });
+  });
 });

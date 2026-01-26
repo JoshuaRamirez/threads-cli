@@ -39,6 +39,7 @@ function createThread(overrides: Partial<Thread> = {}): Thread {
     parentId: overrides.parentId ?? null,
     groupId: overrides.groupId ?? null,
     tags: overrides.tags ?? [],
+    links: overrides.links ?? [],
     dependencies: overrides.dependencies ?? [],
     progress: overrides.progress ?? [],
     details: overrides.details ?? [],

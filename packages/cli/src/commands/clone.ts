@@ -42,11 +42,11 @@ export function cloneThread(
     description: source.description,
     status: source.status,
     importance: source.importance,
-    temperature: source.temperature,
     size: source.size,
     parentId,
     groupId,
     tags: [...source.tags],
+    links: [],         // Don't copy links
     dependencies: [],  // Don't copy dependencies
     progress: [],      // Don't copy progress
     details: [],       // Don't copy details

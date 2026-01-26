@@ -84,10 +84,11 @@ function renderSubtree(root: Entity, descendants: Entity[], depth: number): stri
         hot: chalk.red, warm: chalk.yellow, tepid: chalk.white,
         cold: chalk.cyan, freezing: chalk.blue, frozen: chalk.gray
       };
-      const tempColor = tempColors[thread.temperature] || chalk.white;
+      const temp = thread.temperature ?? 'frozen';
+      const tempColor = tempColors[temp] || chalk.white;
       const stars = '★'.repeat(thread.importance) + '☆'.repeat(5 - thread.importance);
       const tags = thread.tags?.length ? ' ' + thread.tags.map(t => chalk.cyan(`#${t}`)).join(' ') : '';
-      info = ` ${tempColor(thread.temperature.charAt(0).toUpperCase() + thread.temperature.slice(1))} ${chalk.yellow(stars)}${tags}`;
+      info = ` ${tempColor(temp.charAt(0).toUpperCase() + temp.slice(1))} ${chalk.yellow(stars)}${tags}`;
     }
 
     lines.push(`${prefix}${connector}${icon} ${entity.name} ${chalk.gray(`[${entity.id.slice(0, 8)}]`)}${info}`);
@@ -110,10 +111,11 @@ function renderSubtree(root: Entity, descendants: Entity[], depth: number): stri
       hot: chalk.red, warm: chalk.yellow, tepid: chalk.white,
       cold: chalk.cyan, freezing: chalk.blue, frozen: chalk.gray
     };
-    const tempColor = tempColors[thread.temperature] || chalk.white;
+    const temp = thread.temperature ?? 'frozen';
+    const tempColor = tempColors[temp] || chalk.white;
     const stars = '★'.repeat(thread.importance) + '☆'.repeat(5 - thread.importance);
     const tags = thread.tags?.length ? ' ' + thread.tags.map(t => chalk.cyan(`#${t}`)).join(' ') : '';
-    info = ` ${tempColor(thread.temperature.charAt(0).toUpperCase() + thread.temperature.slice(1))} ${chalk.yellow(stars)}${tags}`;
+    info = ` ${tempColor(temp.charAt(0).toUpperCase() + temp.slice(1))} ${chalk.yellow(stars)}${tags}`;
   }
   lines.push(`${icon} ${chalk.bold(root.name)} ${chalk.gray(`[${root.id.slice(0, 8)}]`)}${info}`);
 
@@ -329,7 +331,7 @@ export const listCommand = new Command('list')
         default:
           // Default: hot first, then by importance, then by updatedAt
           const tempOrder = ['hot', 'warm', 'tepid', 'cold', 'freezing', 'frozen'];
-          const tempDiff = tempOrder.indexOf(a.temperature) - tempOrder.indexOf(b.temperature);
+          const tempDiff = tempOrder.indexOf(a.temperature ?? 'frozen') - tempOrder.indexOf(b.temperature ?? 'frozen');
           if (tempDiff !== 0) return tempDiff * reverseMultiplier;
           if (a.importance !== b.importance) return (b.importance - a.importance) * reverseMultiplier;
           return (new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()) * reverseMultiplier;

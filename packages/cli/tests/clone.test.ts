@@ -79,15 +79,16 @@ describe('cloneThread', () => {
     expect(result.status).toBe('paused');
   });
 
-  test('cloneThread_Clone_CopiesTemperature', () => {
+  test('cloneThread_Clone_DoesNotCopyTemperature', () => {
+    // Temperature is now derived from updatedAt, not stored
     // Arrange
     const source = createMockThread({ temperature: 'hot' });
 
     // Act
     const result = cloneThread(source, 'Clone', null, null);
 
-    // Assert
-    expect(result.temperature).toBe('hot');
+    // Assert - temperature should not be set (it's derived)
+    expect(result.temperature).toBeUndefined();
   });
 
   test('cloneThread_Clone_CopiesSize', () => {
@@ -749,5 +750,73 @@ describe('cloneCommand action', () => {
 
     // Assert
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Cloned'));
+  });
+
+  test('cloneCommand_WithChildren_ClonesHierarchy', async () => {
+    // Arrange
+    const parent = createMockThread({ id: 'parent-id', name: 'Parent' });
+    const child = createMockThread({ id: 'child-id', name: 'Child', parentId: 'parent-id' });
+    mockStorage.getThreadById.mockReturnValue(parent);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([parent, child]);
+
+    // Act
+    await cloneCommand.parseAsync(['node', 'test', 'parent-id', '--with-children']);
+
+    // Assert - should add 2 threads (parent + child)
+    expect(mockStorage.addThread).toHaveBeenCalledTimes(2);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('2 thread(s)'));
+  });
+
+  test('cloneCommand_WithChildren_CustomName_UsesCustomName', async () => {
+    // Arrange
+    const parent = createMockThread({ id: 'parent-id', name: 'Parent' });
+    const child = createMockThread({ id: 'child-id', name: 'Child', parentId: 'parent-id' });
+    mockStorage.getThreadById.mockReturnValue(parent);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([parent, child]);
+
+    // Act
+    await cloneCommand.parseAsync(['node', 'test', 'parent-id', 'New Parent Name', '--with-children']);
+
+    // Assert - first call should have custom name
+    expect(mockStorage.addThread).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'New Parent Name' })
+    );
+  });
+
+  test('cloneCommand_WithChildren_PreservesChildNames', async () => {
+    // Arrange
+    const parent = createMockThread({ id: 'parent-id', name: 'Parent' });
+    const child = createMockThread({ id: 'child-id', name: 'Original Child', parentId: 'parent-id' });
+    mockStorage.getThreadById.mockReturnValue(parent);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getAllThreads.mockReturnValue([parent, child]);
+
+    // Act
+    await cloneCommand.parseAsync(['node', 'test', 'parent-id', '--with-children']);
+
+    // Assert - second call should preserve child's original name
+    const calls = mockStorage.addThread.mock.calls;
+    expect(calls[1][0].name).toBe('Original Child');
+  });
+
+  test('cloneCommand_WithChildrenAndGroup_PropagatesGroupToChildren', async () => {
+    // Arrange
+    const parent = createMockThread({ id: 'parent-id', name: 'Parent' });
+    const child = createMockThread({ id: 'child-id', name: 'Child', parentId: 'parent-id' });
+    const group = createMockGroup({ id: 'new-group-id', name: 'New Group' });
+    mockStorage.getThreadById.mockReturnValue(parent);
+    mockStorage.getThreadByName.mockReturnValue(undefined);
+    mockStorage.getGroupByName.mockReturnValue(group);
+    mockStorage.getAllThreads.mockReturnValue([parent, child]);
+
+    // Act
+    await cloneCommand.parseAsync(['node', 'test', 'parent-id', '--with-children', '--group', 'New Group']);
+
+    // Assert - both threads should have the new group
+    const calls = mockStorage.addThread.mock.calls;
+    expect(calls[0][0].groupId).toBe('new-group-id');
+    expect(calls[1][0].groupId).toBe('new-group-id');
   });
 });
